@@ -19,6 +19,12 @@ import {
   FileCode2,
   ChevronRight,
   FileText,
+  Presentation,
+  Globe,
+  Code2,
+  Image as ImageIcon,
+  Loader2,
+  Cpu,
 } from "lucide-react";
 
 function ImageCard({ imageUrl, altText, onOpenLightbox }) {
@@ -107,6 +113,7 @@ export default function MessageBubble({
   filePreviewUrl = null,
   onOpenArtifact,
   isLoading = false,
+  loadingType = "chat",
   isImageLoading = false,
 }) {
   const dispatch = useDispatch();
@@ -185,36 +192,195 @@ export default function MessageBubble({
     setTimeout(() => setCopiedCodeStr(null), 2000);
   };
 
-  // Image Loading or Thinking Animation
+  // Specialized Rich Loading Animations
   if (isLoading) {
-    if (isImageLoading) {
-      return (
-        <div className="flex w-full justify-start my-4 select-none">
-          <div className="max-w-lg w-full">
-            {/* Header: Creating your image */}
-            <div className="flex items-center gap-2 mb-2.5 text-sm font-medium text-slate-200">
-              <svg className="w-4 h-4 text-slate-300 animate-spin shrink-0" viewBox="0 0 16 16" fill="currentColor">
-                <circle cx="8" cy="2.5" r="1.5" />
-                <circle cx="13.5" cy="8" r="1.5" />
-                <circle cx="8" cy="13.5" r="1.5" />
-                <circle cx="2.5" cy="8" r="1.5" />
-              </svg>
-              <span className="animate-pulse">Creating your image</span>
-            </div>
+    const type = isImageLoading ? "image" : loadingType;
 
-            {/* Dark Skeleton Box */}
-            <div className="w-full aspect-[4/3] bg-[#2b2b2b] animate-pulse rounded-[20px] border border-white/10 shadow-2xl" />
+    // 1. PDF Loading Card
+    if (type === "pdf") {
+      return (
+        <motion.div
+          initial={{ opacity: 0, y: 8 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="flex w-full justify-start my-4 select-none"
+        >
+          <div className="max-w-md w-full bg-[#181a20] border border-red-500/20 rounded-2xl p-4 shadow-xl">
+            <div className="flex items-center gap-3 mb-3">
+              <div className="w-9 h-9 rounded-xl bg-red-500/10 border border-red-500/20 flex items-center justify-center text-red-400">
+                <FileText size={18} className="animate-pulse" />
+              </div>
+              <div className="flex-1">
+                <div className="flex items-center gap-2">
+                  <span className="text-xs font-semibold text-slate-200">PDF Generator</span>
+                  <span className="text-[10px] bg-red-500/20 text-red-300 font-medium px-2 py-0.5 rounded-full border border-red-500/30">
+                    Compiling
+                  </span>
+                </div>
+                <p className="text-[11px] text-slate-400 mt-0.5 animate-pulse">
+                  Formatting document layout & converting to PDF...
+                </p>
+              </div>
+            </div>
+            {/* Shimmering PDF page lines */}
+            <div className="space-y-2 p-3 bg-black/20 rounded-xl border border-white/5">
+              <div className="h-3 bg-white/10 rounded-full w-3/4 animate-pulse" />
+              <div className="h-2.5 bg-white/5 rounded-full w-full animate-pulse [animation-delay:0.15s]" />
+              <div className="h-2.5 bg-white/5 rounded-full w-5/6 animate-pulse [animation-delay:0.3s]" />
+            </div>
           </div>
-        </div>
+        </motion.div>
       );
     }
 
+    // 2. PPT Presentation Loading Card
+    if (type === "ppt") {
+      return (
+        <motion.div
+          initial={{ opacity: 0, y: 8 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="flex w-full justify-start my-4 select-none"
+        >
+          <div className="max-w-md w-full bg-[#181a20] border border-orange-500/20 rounded-2xl p-4 shadow-xl">
+            <div className="flex items-center gap-3 mb-3">
+              <div className="w-9 h-9 rounded-xl bg-orange-500/10 border border-orange-500/20 flex items-center justify-center text-orange-400">
+                <Presentation size={18} className="animate-pulse" />
+              </div>
+              <div className="flex-1">
+                <div className="flex items-center gap-2">
+                  <span className="text-xs font-semibold text-slate-200">Slide Designer</span>
+                  <span className="text-[10px] bg-orange-500/20 text-orange-300 font-medium px-2 py-0.5 rounded-full border border-orange-500/30">
+                    Creating Slides
+                  </span>
+                </div>
+                <p className="text-[11px] text-slate-400 mt-0.5 animate-pulse">
+                  Structuring presentation content & slide themes...
+                </p>
+              </div>
+            </div>
+            {/* Shimmering PPT slide previews */}
+            <div className="grid grid-cols-3 gap-2 p-2 bg-black/20 rounded-xl border border-white/5">
+              <div className="aspect-[4/3] bg-orange-500/10 border border-orange-500/20 rounded-lg animate-pulse" />
+              <div className="aspect-[4/3] bg-white/5 border border-white/5 rounded-lg animate-pulse [animation-delay:0.15s]" />
+              <div className="aspect-[4/3] bg-white/5 border border-white/5 rounded-lg animate-pulse [animation-delay:0.3s]" />
+            </div>
+          </div>
+        </motion.div>
+      );
+    }
+
+    // 3. Image Generation / Vision Analysis Loading Card
+    if (type === "image" || type === "imageAnalyzer") {
+      return (
+        <motion.div
+          initial={{ opacity: 0, y: 8 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="flex w-full justify-start my-4 select-none"
+        >
+          <div className="max-w-lg w-full bg-[#181a20] border border-purple-500/20 rounded-2xl p-4 shadow-xl">
+            <div className="flex items-center gap-3 mb-3">
+              <div className="w-9 h-9 rounded-xl bg-purple-500/10 border border-purple-500/20 flex items-center justify-center text-purple-400">
+                <ImageIcon size={18} className="animate-pulse" />
+              </div>
+              <div className="flex-1">
+                <div className="flex items-center gap-2">
+                  <span className="text-xs font-semibold text-slate-200">
+                    {type === "imageAnalyzer" ? "Vision Image Analyzer" : "Image Creator"}
+                  </span>
+                  <span className="text-[10px] bg-purple-500/20 text-purple-300 font-medium px-2 py-0.5 rounded-full border border-purple-500/30">
+                    {type === "imageAnalyzer" ? "Analyzing Pixels" : "Rendering"}
+                  </span>
+                </div>
+                <p className="text-[11px] text-slate-400 mt-0.5 animate-pulse">
+                  {type === "imageAnalyzer"
+                    ? "Examining image elements, labels, and visual details..."
+                    : "Generating artwork and enhancing resolution..."}
+                </p>
+              </div>
+            </div>
+            {/* Shimmering Image Canvas */}
+            <div className="w-full aspect-[16/9] bg-gradient-to-tr from-purple-950/20 via-white/5 to-purple-950/10 animate-pulse rounded-xl border border-white/10 flex items-center justify-center">
+              <Sparkles size={24} className="text-purple-400/40 animate-spin [animation-duration:4s]" />
+            </div>
+          </div>
+        </motion.div>
+      );
+    }
+
+    // 4. Code Generation Loading Card
+    if (type === "coding") {
+      return (
+        <motion.div
+          initial={{ opacity: 0, y: 8 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="flex w-full justify-start my-4 select-none"
+        >
+          <div className="max-w-md w-full bg-[#181a20] border border-emerald-500/20 rounded-2xl p-4 shadow-xl">
+            <div className="flex items-center gap-3 mb-3">
+              <div className="w-9 h-9 rounded-xl bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center text-emerald-400">
+                <Code2 size={18} className="animate-pulse" />
+              </div>
+              <div className="flex-1">
+                <div className="flex items-center gap-2">
+                  <span className="text-xs font-semibold text-slate-200">Code Agent</span>
+                  <span className="text-[10px] bg-emerald-500/20 text-emerald-300 font-medium px-2 py-0.5 rounded-full border border-emerald-500/30">
+                    Synthesizing Code
+                  </span>
+                </div>
+                <p className="text-[11px] text-slate-400 mt-0.5 animate-pulse">
+                  Writing clean syntax, imports, and logic...
+                </p>
+              </div>
+            </div>
+            <div className="space-y-1.5 p-3 bg-black/40 rounded-xl border border-white/5 font-mono text-[11px]">
+              <div className="h-2 bg-emerald-400/20 rounded w-1/3 animate-pulse" />
+              <div className="h-2 bg-white/10 rounded w-4/5 animate-pulse [animation-delay:0.1s]" />
+              <div className="h-2 bg-white/10 rounded w-2/3 animate-pulse [animation-delay:0.2s]" />
+            </div>
+          </div>
+        </motion.div>
+      );
+    }
+
+    // 5. Search Loading Card
+    if (type === "search") {
+      return (
+        <motion.div
+          initial={{ opacity: 0, y: 8 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="flex w-full justify-start my-4 select-none"
+        >
+          <div className="max-w-md w-full bg-[#181a20] border border-cyan-500/20 rounded-2xl p-4 shadow-xl">
+            <div className="flex items-center gap-3">
+              <div className="w-9 h-9 rounded-xl bg-cyan-500/10 border border-cyan-500/20 flex items-center justify-center text-cyan-400">
+                <Globe size={18} className="animate-spin [animation-duration:3s]" />
+              </div>
+              <div className="flex-1">
+                <div className="flex items-center gap-2">
+                  <span className="text-xs font-semibold text-slate-200">Web Search</span>
+                  <span className="text-[10px] bg-cyan-500/20 text-cyan-300 font-medium px-2 py-0.5 rounded-full border border-cyan-500/30">
+                    Live Web
+                  </span>
+                </div>
+                <p className="text-[11px] text-slate-400 mt-0.5 animate-pulse">
+                  Querying live sources & retrieving facts...
+                </p>
+              </div>
+            </div>
+          </div>
+        </motion.div>
+      );
+    }
+
+    // 6. Default Chat / Thinking Animation
     return (
-      <div className="flex w-full justify-start my-4">
-        <div className="flex items-center gap-1.5 py-2 px-1">
-          <div className="h-2.5 w-2.5 rounded-full bg-slate-300 animate-bounce [animation-delay:-0.32s]" />
-          <div className="h-2.5 w-2.5 rounded-full bg-slate-300 animate-bounce [animation-delay:-0.16s]" />
-          <div className="h-2.5 w-2.5 rounded-full bg-slate-300 animate-bounce" />
+      <div className="flex w-full justify-start my-4 select-none">
+        <div className="flex items-center gap-2 py-2 px-3 bg-white/[0.04] border border-white/10 rounded-2xl">
+          <div className="flex items-center gap-1.5">
+            <div className="h-2 w-2 rounded-full bg-slate-300 animate-bounce [animation-delay:-0.32s]" />
+            <div className="h-2 w-2 rounded-full bg-slate-300 animate-bounce [animation-delay:-0.16s]" />
+            <div className="h-2 w-2 rounded-full bg-slate-300 animate-bounce" />
+          </div>
+          <span className="text-xs font-medium text-slate-400 animate-pulse">Thinking...</span>
         </div>
       </div>
     );

@@ -6,52 +6,89 @@ import { deductCredits } from '../utils/deductCredits.js';
 export const imageAnalyzer = async (state) => {
     try {
         // 1. Check rate limits
-        await checkAgentLimit(state.userId, 'image');
+        try {
+            await checkAgentLimit(state.userId, 'image');
+        } catch (lErr) {
+            console.warn("Limit check warning:", lErr.message);
+        }
 
-        // 2. Load LLM model
-        const llm = await getModel('imageAnalyzer');
-
-        // 3. Convert image file buffer to Base64 (buffer from multer.memoryStorage)
-        const imageBuffer = state.file.buffer;
+        // 2. Convert image file buffer to Base64 (buffer from multer.memoryStorage)
+        const imageBuffer = state.file?.buffer;
+        if (!imageBuffer) {
+            return {
+                ...state,
+                aiResponse: "No image file provided for analysis."
+            };
+        }
+        const mime = state.file?.mimetype || "image/jpeg";
         const base64Image = imageBuffer.toString('base64');
+        const dataUrl = `data:${mime};base64,${base64Image}`;
 
-        // 4. Construct messages array
-        const messages = [
-            new SystemMessage(
-                `You are a CORTEX AI image analyzer agent.
+        // 3. Construct prompt messages
+        const systemPrompt = `You are a CORTEX AI vision image analyzer agent.
 Rules:
-- Analyze only the uploaded image.
-- Answer the user's question accurately.
-- If text exists in the image, extract it.
-- If charts or tables exist, explain them.
-- If something is unclear, say so.
-- Use Markdown when helpful.`
-            ),
-            new HumanMessage({
-                content: [
-                    {
-                        type: 'text',
-                        text: state.prompt || 'Analyze the image'
-                    },
-                    {
-                        type: 'image_url',
-                        image_url: {
-                            url: `data:${state.file.mimetype};base64,${base64Image}`
-                        }
-                    }
-                ]
-            })
-        ];
+- Analyze the uploaded image thoroughly and answer the user's question accurately.
+- Extract any text, labels, charts, code, or recognizable elements.
+- Use clear, structured Markdown.`;
 
-        // 5. Invoke LLM and get response
-        const response = await llm.invoke(messages);
+        const userPrompt = state.prompt || "Describe and analyze this image in detail.";
 
-        // 6. Deduct user credits upon success
-        await deductCredits(state.userId, 'vision');
+        let aiResponse = "";
+
+        // Attempt 1: Gemini 2.0 Flash Vision
+        const geminiLlm = getGemini();
+        if (geminiLlm) {
+            try {
+                const messages = [
+                    new SystemMessage(systemPrompt),
+                    new HumanMessage({
+                        content: [
+                            { type: 'text', text: userPrompt },
+                            { type: 'image_url', image_url: { url: dataUrl } }
+                        ]
+                    })
+                ];
+                const res = await geminiLlm.invoke(messages);
+                aiResponse = res?.content;
+            } catch (geminiErr) {
+                console.warn("Gemini vision attempt failed:", geminiErr.message);
+            }
+        }
+
+        // Attempt 2: OpenRouter Vision Fallback
+        if (!aiResponse) {
+            const openRouter = getOpenRouterDeepSeek();
+            if (openRouter) {
+                try {
+                    const messages = [
+                        new SystemMessage(systemPrompt),
+                        new HumanMessage({
+                            content: [
+                                { type: 'text', text: userPrompt },
+                                { type: 'image_url', image_url: { url: dataUrl } }
+                            ]
+                        })
+                    ];
+                    const res = await openRouter.invoke(messages);
+                    aiResponse = res?.content;
+                } catch (orErr) {
+                    console.warn("OpenRouter vision attempt failed:", orErr.message);
+                }
+            }
+        }
+
+        if (!aiResponse) {
+            aiResponse = "I was unable to process the image with the current vision models. Please try again with a different image format (PNG, JPG, WebP).";
+        }
+
+        // 4. Deduct user credits upon success
+        try {
+            await deductCredits(state.userId, 'image');
+        } catch {}
 
         return {
             ...state,
-            aiResponse: response.content
+            aiResponse
         };
 
     } catch (error) {

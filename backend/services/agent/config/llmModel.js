@@ -79,7 +79,7 @@ export const getGemini = () => {
     currentGeminiKey = apiKey;
     geminiInstance = new ChatGoogleGenerativeAI({
       apiKey,
-      model: "gemini-3.6-flash",
+      model: "gemini-2.0-flash",
       temperature: 0.7,
     });
   }

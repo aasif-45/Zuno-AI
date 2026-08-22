@@ -137,20 +137,36 @@ export default function MessageList({ onOpenArtifact }) {
           );
         })}
 
-        {/* ChatGPT Thinking / Image Skeleton Loading Indicator */}
-        {loading && (
-          <MessageBubble
-            role="assistant"
-            isLoading={true}
-            isImageLoading={
-              validMessages.length > 0 &&
-              validMessages[validMessages.length - 1]?.role === "user" &&
-              /image|draw|picture|photo|logo|generate/i.test(
-                validMessages[validMessages.length - 1]?.content || ""
-              )
-            }
-          />
-        )}
+        {/* Specialized Loading Animations for all Agents (PDF, PPT, Image, Code, Search, Chat) */}
+        {loading && (() => {
+          const lastMsg = validMessages.length > 0 ? validMessages[validMessages.length - 1] : null;
+          const lastText = (lastMsg?.content || "").toLowerCase();
+          const fileType = lastMsg?.fileType || "";
+          const fileName = (lastMsg?.fileName || "").toLowerCase();
+
+          let type = "chat";
+          if (fileType === "application/pdf" || fileName.endsWith(".pdf") || /\b(pdf|document|summarize pdf|create pdf)\b/i.test(lastText)) {
+            type = "pdf";
+          } else if (/\b(ppt|presentation|powerpoint|slides|slide deck)\b/i.test(lastText)) {
+            type = "ppt";
+          } else if (fileType.startsWith("image/") || /\.(jpeg|jpg|png|webp|gif)$/i.test(fileName)) {
+            type = "imageAnalyzer";
+          } else if (/\b(image|draw|picture|photo|logo|generate image|create image|render image|wallpaper)\b/i.test(lastText)) {
+            type = "image";
+          } else if (/\b(code|coding|function|component|debug|algorithm|python|javascript|react|html|css|sql|script)\b/i.test(lastText)) {
+            type = "coding";
+          } else if (/\b(search|news|weather|price|who is|latest|current date|today)\b/i.test(lastText)) {
+            type = "search";
+          }
+
+          return (
+            <MessageBubble
+              role="assistant"
+              isLoading={true}
+              loadingType={type}
+            />
+          );
+        })()}
 
         <div ref={messagesEndRef} />
       </div>
