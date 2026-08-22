@@ -11,6 +11,7 @@ export default function ChatArea() {
   const dispatch = useDispatch();
   const { selectedConversation } = useSelector((state) => state.conversation);
   const { messages, activeArtifact: reduxActiveArtifact } = useSelector((state) => state.message);
+  const { userData } = useSelector((state) => state.user);
 
   const [activeArtifact, setActiveArtifact] = useState({
     open: false,
@@ -28,9 +29,11 @@ export default function ChatArea() {
   useEffect(() => {
     const convId = selectedConversation?._id;
 
-    if (!convId) {
-      dispatch(clearMessages());
-      setActiveArtifact({ open: false, artifact: null, selectedFile: null });
+    if (!convId || !userData) {
+      if (!convId) {
+        dispatch(clearMessages());
+        setActiveArtifact({ open: false, artifact: null, selectedFile: null });
+      }
       return;
     }
 
@@ -48,7 +51,7 @@ export default function ChatArea() {
       };
       getMess();
     }
-  }, [selectedConversation?._id, dispatch]);
+  }, [selectedConversation?._id, userData, dispatch]);
 
   const handleOpenArtifact = (artifact) => {
     if (!artifact) return;

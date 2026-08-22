@@ -64,19 +64,26 @@ export default function Sidebar() {
     }
   }, []);
 
-  // 2. Fetch conversations list from server and match selected conversation
+  // 2. Fetch conversations list from server automatically on mount AND on user login
   useEffect(() => {
+    if (!userData) return;
+
     const getConv = async () => {
       try {
         const data = await getConversations();
-        dispatch(setConversation(data));
+        const convList = Array.isArray(data) ? data : [];
+        dispatch(setConversation(convList));
 
         const urlConvId = getConvIdFromUrl();
-        if (urlConvId && Array.isArray(data)) {
-          const matched = data.find((c) => c._id === urlConvId);
+        if (urlConvId && convList.length > 0) {
+          const matched = convList.find((c) => c._id === urlConvId);
           if (matched) {
             dispatch(setSelectedConversation(matched));
+          } else if (!selectedConversation) {
+            dispatch(setSelectedConversation(convList[0]));
           }
+        } else if (convList.length > 0 && !selectedConversation) {
+          dispatch(setSelectedConversation(convList[0]));
         }
       } catch (error) {
         console.error("Failed to fetch conversations:", error);
@@ -84,7 +91,7 @@ export default function Sidebar() {
     };
 
     getConv();
-  }, [dispatch]);
+  }, [dispatch, userData]);
 
   // 3. Update browser URL & localStorage whenever selectedConversation changes
   useEffect(() => {
