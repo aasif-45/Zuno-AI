@@ -206,7 +206,7 @@ export default function ProfileModal({ isOpen, onClose, onUpgrade }) {
                   <span className="text-slate-400 flex items-center gap-2">
                     <Cpu size={14} /> Neural Agent Engine
                   </span>
-                  <span className="text-emerald-400 font-medium">Gemini 3 + DeepSeek V4</span>
+                  <span className="text-emerald-400 font-medium">Latest Model</span>
                 </div>
 
                 <div className="flex items-center justify-between px-4 py-3 text-xs">

@@ -141,7 +141,7 @@ export default function SettingsModal({ isOpen, onClose }) {
                       onChange={(e) => setTheme(e.target.value)}
                       className="bg-[#2a2a2a] border border-white/10 text-slate-200 text-xs rounded-lg px-3 py-2 outline-none focus:border-emerald-500 cursor-pointer"
                     >
-                      <option value="dark">Dark (ChatGPT Default)</option>
+                      <option value="dark">Dark (Default)</option>
                       <option value="system">System Synchronized</option>
                     </select>
                   </div>
@@ -173,7 +173,7 @@ export default function SettingsModal({ isOpen, onClose }) {
                       <div className="text-xs text-slate-400">Preferred neural reasoning engine</div>
                     </div>
                     <span className="text-xs font-mono px-2.5 py-1 rounded-md bg-white/10 text-emerald-400 border border-white/5">
-                      Auto Router (Multi-Agent)
+                      Best Model
                     </span>
                   </div>
                 </div>
