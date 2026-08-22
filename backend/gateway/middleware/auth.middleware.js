@@ -2,7 +2,16 @@ import redis from "../../shared/redis/redis.js";
 
 export const protect = async (req, res, next) => {
   try {
-    const sessionId = req.cookies?.session;
+    const authHeader = req.headers["authorization"];
+    const bearerToken =
+      authHeader && authHeader.startsWith("Bearer ")
+        ? authHeader.slice(7).trim()
+        : null;
+
+    const sessionId =
+      req.cookies?.session ||
+      bearerToken ||
+      req.headers["x-session-id"];
 
     if (!sessionId) {
       return res.status(401).json({ message: "Unauthorized User" });

@@ -55,6 +55,8 @@ export const login = async (req, res) => {
       totalCredits: user.totalCredits ?? 100,
       planStartedAt: user.planStartedAt,
       planExpiresAt: user.planExpiresAt,
+      sessionId: sessionId,
+      token: sessionId,
     };
 
     try {
