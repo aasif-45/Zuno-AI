@@ -69,7 +69,7 @@ const getOpenCodeCodingModel = () => {
   return openCodeInstance;
 };
 
-export const getGemini = () => {
+export const getGemini = (modelName = "gemini-3.7-flash") => {
   const apiKey = (process.env.GEMINI_API_KEY || process.env.GOOGLE_API_KEY || "").trim();
   if (!apiKey) {
     return null;
@@ -79,7 +79,7 @@ export const getGemini = () => {
     currentGeminiKey = apiKey;
     geminiInstance = new ChatGoogleGenerativeAI({
       apiKey,
-      model: "gemini-2.0-flash",
+      model: modelName,
       temperature: 0.7,
     });
   }
