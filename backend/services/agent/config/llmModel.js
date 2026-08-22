@@ -129,6 +129,7 @@ export const getOpenRouterDeepSeek = () => {
       apiKey,
       model: "deepseek/deepseek-chat",
       temperature: 0.7,
+      maxTokens: 2500,
       maxRetries: 2,
       configuration: {
         baseURL: "https://openrouter.ai/api/v1",
@@ -149,63 +150,87 @@ export const getModel = async (type = "chat") => {
     case "search":
     case "pdf":
     case "ppt":
-      return getGemini() || getOpenRouterDeepSeek() || getGroq();
+      return getOpenCodeCodingModel() || getOpenRouterDeepSeek() || getGemini() || getGroq();
 
     case "router":
       return getGroq();
 
     case "coding":
-      return getGemini() || getOpenRouterDeepSeek() || getGroq();
+      return getOpenCodeCodingModel() || getOpenRouterDeepSeek() || getGemini() || getGroq();
 
     case "imageAnalyzer":
       return getGemini();
 
     default:
-      return getGemini() || getOpenRouterDeepSeek() || getGroq();
+      return getOpenCodeCodingModel() || getOpenRouterDeepSeek() || getGemini() || getGroq();
   }
 };
 
 /**
- * Multi-tier execution pipeline implementing the Chat Agent architecture:
- * User prompt -> Gemini text model -> Fallback 1: OpenRouter DeepSeek -> Fallback 2: Groq text model -> Frontend
+ * Multi-tier execution pipeline:
+ * User prompt -> OpenCode (deepseek-v4-flash-free) -> OpenRouter DeepSeek -> Gemini text model -> Groq text model -> Frontend
  */
 export const invokeModelWithFallback = async (model, input) => {
-  // Step 1: Gemini text model (Primary)
+  // Step 1: Specific requested model / OpenCode deepseek-v4-flash-free
+  if (model) {
+    try {
+      console.log("🤖 [AI Agent Pipeline] Executing Primary Model...");
+      const res = await model.invoke(input);
+      console.log("✅ [AI Agent Pipeline] Primary Model succeeded!");
+      return sanitizeResult(res);
+    } catch (errPrimary) {
+      console.error("⚠️ [AI Agent Pipeline] Primary Model failed, moving to fallbacks:", errPrimary.message || errPrimary);
+    }
+  }
+
+  // Step 2: OpenCode deepseek-v4-flash-free
   try {
-    const primaryModel = model || getGemini();
-    if (primaryModel) {
-      console.log("🤖 [Chat Agent Pipeline] Executing Step 1: Gemini text model...");
-      const res = await primaryModel.invoke(input);
-      console.log("✅ [Chat Agent Pipeline] Step 1 (Gemini text model) succeeded!");
+    const openCodeModel = getOpenCodeCodingModel();
+    if (openCodeModel && openCodeModel !== model) {
+      console.log("🤖 [AI Agent Pipeline] Trying OpenCode deepseek-v4-flash-free...");
+      const res = await openCodeModel.invoke(input);
+      console.log("✅ [AI Agent Pipeline] OpenCode deepseek-v4-flash-free succeeded!");
       return sanitizeResult(res);
     }
-  } catch (error) {
-    console.error("⚠️ [Chat Agent Pipeline] Step 1 (Gemini text model) failed:", error.message || error);
+  } catch (errOpenCode) {
+    console.error("⚠️ [AI Agent Pipeline] OpenCode deepseek-v4-flash-free failed:", errOpenCode.message || errOpenCode);
   }
 
-  // Step 2 (Fallback 1): OpenRouter DeepSeek
+  // Step 3: OpenRouter DeepSeek
   try {
-    console.log("🔄 [Chat Agent Pipeline] Step 2: Executing Fallback 1 -> OpenRouter DeepSeek...");
+    console.log("🔄 [AI Agent Pipeline] Step 3: Executing OpenRouter DeepSeek...");
     const openRouterModel = getOpenRouterDeepSeek();
-    if (!openRouterModel) {
-      throw new Error("OPENROUTER_API_KEY is missing or not configured.");
+    if (openRouterModel) {
+      const res = await openRouterModel.invoke(input);
+      console.log("✅ [AI Agent Pipeline] OpenRouter DeepSeek succeeded!");
+      return sanitizeResult(res);
     }
-    const res = await openRouterModel.invoke(input);
-    console.log("✅ [Chat Agent Pipeline] Step 2 Fallback 1 (OpenRouter DeepSeek) succeeded!");
-    return sanitizeResult(res);
-  } catch (err1) {
-    console.error("⚠️ [Chat Agent Pipeline] Step 2 Fallback 1 (OpenRouter DeepSeek) failed:", err1.message || err1);
+  } catch (errOpenRouter) {
+    console.error("⚠️ [AI Agent Pipeline] OpenRouter DeepSeek failed:", errOpenRouter.message || errOpenRouter);
   }
 
-  // Step 3 (Fallback 2): Groq text model
+  // Step 4: Gemini text model
   try {
-    console.log("🔄 [Chat Agent Pipeline] Step 3: Executing Fallback 2 -> Groq text model...");
+    console.log("🔄 [AI Agent Pipeline] Step 4: Executing Gemini text model...");
+    const geminiModel = getGemini();
+    if (geminiModel) {
+      const res = await geminiModel.invoke(input);
+      console.log("✅ [AI Agent Pipeline] Gemini text model succeeded!");
+      return sanitizeResult(res);
+    }
+  } catch (errGemini) {
+    console.error("⚠️ [AI Agent Pipeline] Gemini text model failed:", errGemini.message || errGemini);
+  }
+
+  // Step 5: Groq text model (openai/gpt-oss-120b)
+  try {
+    console.log("🔄 [AI Agent Pipeline] Step 5: Executing Groq text model...");
     const groqModel = getGroq();
     const res = await groqModel.invoke(input);
-    console.log("✅ [Chat Agent Pipeline] Step 3 Fallback 2 (Groq text model) succeeded!");
+    console.log("✅ [AI Agent Pipeline] Groq text model succeeded!");
     return sanitizeResult(res);
-  } catch (err2) {
-    console.error("❌ [Chat Agent Pipeline] Step 3 Fallback 2 (Groq text model) failed:", err2.message || err2);
+  } catch (errGroq) {
+    console.error("❌ [AI Agent Pipeline] Groq text model failed:", errGroq.message || errGroq);
     return {
       content: "I am MY AI, an advanced AI assistant. How can I help you today?",
     };
