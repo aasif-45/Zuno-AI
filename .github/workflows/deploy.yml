@@ -1,0 +1,112 @@
+name: Deploy Cortex AI to AWS
+
+on:
+  push:
+    branches:
+      - main
+
+env:
+  AWS_REGION: us-east-1
+  ACCOUNT_ID: ${{ secrets.AWS_ACCOUNT_ID }}
+  ECS_CLUSTER: backend
+  S3_BUCKET: myai-demo1
+
+jobs:
+  # ============================================================
+  # 1. BUILD & DEPLOY BACKEND MICROSERVICES TO ECS
+  # ============================================================
+  deploy-backend:
+    name: Build & Deploy Backend Microservices
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Log in to Amazon ECR
+        id: login-ecr
+        uses: aws-actions/amazon-ecr-login@v2
+
+      - name: Build, Tag & Push Microservice Images
+        env:
+          REGISTRY: ${{ steps.login-ecr.outputs.registry }}
+        run: |
+          cd backend
+          
+          # Gateway
+          docker build -f gateway/Dockerfile -t $REGISTRY/gateway-service:latest .
+          docker push $REGISTRY/gateway-service:latest
+
+          # Auth Service
+          docker build -f services/auth/Dockerfile -t $REGISTRY/auth-service:latest .
+          docker push $REGISTRY/auth-service:latest
+
+          # Chat Service
+          docker build -f services/chat/Dockerfile -t $REGISTRY/chat-service:latest .
+          docker push $REGISTRY/chat-service:latest
+
+          # Agent Service
+          docker build -f services/agent/Dockerfile -t $REGISTRY/agent-service:latest .
+          docker push $REGISTRY/agent-service:latest
+
+          # Billing Service
+          docker build -f services/Billing/Dockerfile -t $REGISTRY/billing-service:latest .
+          docker push $REGISTRY/billing-service:latest
+
+      - name: Force New ECS Deployments
+        run: |
+          aws ecs update-service --cluster $ECS_CLUSTER --service gateway-task-service-17zd0afr --force-new-deployment --region $AWS_REGION || true
+          aws ecs update-service --cluster $ECS_CLUSTER --service auth-service --force-new-deployment --region $AWS_REGION || true
+          aws ecs update-service --cluster $ECS_CLUSTER --service chat-service --force-new-deployment --region $AWS_REGION || true
+          aws ecs update-service --cluster $ECS_CLUSTER --service agent-service --force-new-deployment --region $AWS_REGION || true
+          aws ecs update-service --cluster $ECS_CLUSTER --service billing-service --force-new-deployment --region $AWS_REGION || true
+
+  # ============================================================
+  # 2. BUILD & DEPLOY FRONTEND TO S3 & CLOUDFRONT
+  # ============================================================
+  deploy-frontend:
+    name: Build & Deploy Frontend to S3
+    runs-on: ubuntu-latest
+    needs: deploy-backend
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Install Frontend Dependencies & Build
+        env:
+          VITE_FIREBASE_API_KEY: ${{ secrets.VITE_FIREBASE_API_KEY }}
+          VITE_RAZORPAY_KEY_ID: ${{ secrets.VITE_RAZORPAY_KEY_ID }}
+          VITE_SERVER_URL: ${{ secrets.VITE_SERVER_URL }}
+        run: |
+          cd frontend
+          npm install
+          npm run build
+
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Sync Build to S3
+        run: |
+          aws s3 sync frontend/dist s3://${{ env.S3_BUCKET }}/ --delete
+
+      - name: Invalidate CloudFront Cache (Optional)
+        if: env.CLOUDFRONT_DISTRIBUTION_ID != ''
+        env:
+          CLOUDFRONT_DISTRIBUTION_ID: ${{ secrets.CLOUDFRONT_DISTRIBUTION_ID }}
+        run: |
+          aws cloudfront create-invalidation --distribution-id $CLOUDFRONT_DISTRIBUTION_ID --paths "/*" || true

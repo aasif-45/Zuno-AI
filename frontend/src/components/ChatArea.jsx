@@ -1,0 +1,83 @@
+import React, { useEffect, useState } from "react";
+import MessageList from "./MessageList.jsx";
+import Nav from "./Nav.jsx";
+import ChatInput from "./ChatInput.jsx";
+import Artifact from "./Artifact.jsx";
+import { useDispatch, useSelector } from "react-redux";
+import getMessage from "../features/getMessage.js";
+import { setMessage, clearMessages } from "../redux/messageSlice.js";
+
+export default function ChatArea() {
+  const dispatch = useDispatch();
+  const { selectedConversation } = useSelector((state) => state.conversation);
+  const { messages } = useSelector((state) => state.message);
+
+  const [activeArtifact, setActiveArtifact] = useState({
+    open: false,
+    artifact: null,
+    selectedFile: null,
+  });
+
+  useEffect(() => {
+    const convId = selectedConversation?._id;
+
+    if (!convId) {
+      dispatch(clearMessages());
+      setActiveArtifact({ open: false, artifact: null, selectedFile: null });
+      return;
+    }
+
+    // Check if Redux already contains messages for this conversation (e.g. optimistic user prompt)
+    const hasMessagesForCurrentConv =
+      Array.isArray(messages) &&
+      messages.length > 0 &&
+      messages.some((m) => m.conversationId === convId || !m.conversationId);
+
+    if (!hasMessagesForCurrentConv) {
+      const getMess = async () => {
+        dispatch(clearMessages());
+        const data = await getMessage(convId);
+        dispatch(setMessage(Array.isArray(data) ? data : []));
+      };
+      getMess();
+    }
+
+    setActiveArtifact({ open: false, artifact: null, selectedFile: null });
+  }, [selectedConversation?._id, dispatch]);
+
+  const handleOpenArtifact = (artifact) => {
+    if (!artifact) return;
+    setActiveArtifact({
+      open: true,
+      artifact: artifact,
+      selectedFile: artifact.files?.[0]?.name || null,
+    });
+  };
+
+  const handleCloseArtifact = () => {
+    setActiveArtifact({
+      open: false,
+      artifact: null,
+      selectedFile: null,
+    });
+  };
+
+  return (
+    <div className="flex-1 flex flex-col h-screen overflow-hidden bg-[#212121] text-white transition-all duration-300 ease-in-out relative">
+      <Nav />
+      <MessageList onOpenArtifact={handleOpenArtifact} />
+      <ChatInput />
+
+      {/* Slide-Over Artifact Code Viewer Panel */}
+      <Artifact
+        open={activeArtifact.open}
+        artifact={activeArtifact.artifact}
+        selectedFile={activeArtifact.selectedFile}
+        setSelectedFile={(file) =>
+          setActiveArtifact((prev) => ({ ...prev, selectedFile: file }))
+        }
+        onClose={handleCloseArtifact}
+      />
+    </div>
+  );
+}
