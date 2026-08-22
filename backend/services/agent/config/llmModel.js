@@ -250,9 +250,10 @@ export const GFM_FORMATTING_RULES = `
  * ensuring no consecutive duplicate roles exist and excluding error messages.
  */
 export const buildCleanLLMMessages = (systemPrompt, history = [], currentPrompt = "") => {
-  const clean = [new SystemMessage(systemPrompt)];
+  const clean = systemPrompt ? [new SystemMessage(systemPrompt)] : [];
 
-  const rawList = (history || [])
+  // 1. Filter and clean raw history list
+  const filtered = (history || [])
     .filter(
       (msg) =>
         msg &&
@@ -266,31 +267,46 @@ export const buildCleanLLMMessages = (systemPrompt, history = [], currentPrompt 
       content: cleanMathDollarSigns(msg.content.trim()),
     }));
 
+  // 2. Ensure current prompt is included at the end if not already present
   if (currentPrompt && currentPrompt.trim()) {
-    const trimmed = currentPrompt.trim();
-    const last = rawList[rawList.length - 1];
+    const trimmed = cleanMathDollarSigns(currentPrompt.trim());
+    const last = filtered[filtered.length - 1];
     if (!last || last.content !== trimmed || last.role !== "user") {
-      rawList.push({ role: "user", content: trimmed });
+      filtered.push({ role: "user", content: trimmed });
     }
   }
 
-  const conversationTurns = [];
-  for (const msg of rawList) {
-    if (conversationTurns.length > 0) {
-      const prev = conversationTurns[conversationTurns.length - 1];
-      if (prev.role === msg.role) {
-        prev.content = `${prev.content}\n${msg.content}`;
-        continue;
+  // 3. Strict Alternation Enforcement: Merge consecutive same-role turns
+  const alternatingTurns = [];
+  for (const item of filtered) {
+    if (!item.content) continue;
+    if (alternatingTurns.length === 0) {
+      // First turn must be user
+      alternatingTurns.push({ role: item.role, content: item.content });
+    } else {
+      const prev = alternatingTurns[alternatingTurns.length - 1];
+      if (prev.role === item.role) {
+        // Merge consecutive same-role contents into one single turn
+        prev.content = `${prev.content}\n\n${item.content}`;
+      } else {
+        alternatingTurns.push({ role: item.role, content: item.content });
       }
     }
-    conversationTurns.push({ role: msg.role, content: msg.content });
   }
 
-  if (conversationTurns.length > 0 && conversationTurns[0].role === "assistant") {
-    conversationTurns.unshift({ role: "user", content: "Hello" });
+  // If first turn is assistant, prepend a polite user prompt
+  if (alternatingTurns.length > 0 && alternatingTurns[0].role === "assistant") {
+    alternatingTurns.unshift({ role: "user", content: "Hello" });
   }
 
-  const langChainMessages = conversationTurns.map((msg) =>
+  // Ensure last turn is user
+  if (alternatingTurns.length > 0 && alternatingTurns[alternatingTurns.length - 1].role !== "user") {
+    if (currentPrompt && currentPrompt.trim()) {
+      alternatingTurns.push({ role: "user", content: currentPrompt.trim() });
+    }
+  }
+
+  const langChainMessages = alternatingTurns.map((msg) =>
     msg.role === "assistant" ? new AIMessage(msg.content) : new HumanMessage(msg.content)
   );
 
