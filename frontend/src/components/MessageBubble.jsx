@@ -175,17 +175,55 @@ export default function MessageBubble({
     return null;
   }
 
-  const handleCopyText = () => {
-    if (!cleanText) return;
-    navigator.clipboard.writeText(cleanText);
-    setCopiedText(true);
-    setTimeout(() => setCopiedText(false), 2000);
+  const copyToClipboardSafe = async (textToCopy) => {
+    if (!textToCopy) return false;
+    // Method 1: Modern Async Clipboard API
+    if (navigator?.clipboard?.writeText) {
+      try {
+        await navigator.clipboard.writeText(textToCopy);
+        return true;
+      } catch (err) {
+        console.warn("Async clipboard failed, attempting legacy execCommand fallback:", err);
+      }
+    }
+
+    // Method 2: Universal document.execCommand fallback (works on HTTP and all browsers)
+    try {
+      const textArea = document.createElement("textarea");
+      textArea.value = textToCopy;
+      textArea.style.position = "fixed";
+      textArea.style.left = "-9999px";
+      textArea.style.top = "-9999px";
+      textArea.setAttribute("readonly", "");
+      document.body.appendChild(textArea);
+      textArea.select();
+      textArea.setSelectionRange(0, 99999);
+      const successful = document.execCommand("copy");
+      document.body.removeChild(textArea);
+      return successful;
+    } catch (fallbackErr) {
+      console.error("Fallback execCommand copy failed:", fallbackErr);
+      return false;
+    }
   };
 
-  const handleCopyCode = (codeStr) => {
-    navigator.clipboard.writeText(codeStr);
-    setCopiedCodeStr(codeStr);
-    setTimeout(() => setCopiedCodeStr(null), 2000);
+  const handleCopyText = async () => {
+    const textToCopy = cleanText || content || "";
+    if (!textToCopy) return;
+    const ok = await copyToClipboardSafe(textToCopy);
+    if (ok !== false) {
+      setCopiedText(true);
+      setTimeout(() => setCopiedText(false), 2000);
+    }
+  };
+
+  const handleCopyCode = async (codeStr) => {
+    if (!codeStr) return;
+    const ok = await copyToClipboardSafe(codeStr);
+    if (ok !== false) {
+      setCopiedCodeStr(codeStr);
+      setTimeout(() => setCopiedCodeStr(null), 2000);
+    }
   };
 
   // Authentic ChatGPT-style Loading Animations
