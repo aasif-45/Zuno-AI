@@ -145,16 +145,20 @@ export default function MessageList({ onOpenArtifact }) {
           const fileName = (lastMsg?.fileName || "").toLowerCase();
 
           let type = "chat";
-          if (fileType === "application/pdf" || fileName.endsWith(".pdf") || /\b(pdf|document|summarize pdf|create pdf)\b/i.test(lastText)) {
+          if (fileType === "application/pdf" || fileName.endsWith(".pdf") || /\b(pdf|downloadable pdf|pdf file|document|summarize pdf|create pdf)\b/i.test(lastText)) {
             type = "pdf";
           } else if (/\b(ppt|presentation|powerpoint|slides|slide deck)\b/i.test(lastText)) {
             type = "ppt";
           } else if (fileType.startsWith("image/") || /\.(jpeg|jpg|png|webp|gif)$/i.test(fileName)) {
             type = "imageAnalyzer";
-          } else if (/\b(image|draw|picture|photo|logo|generate image|create image|render image|wallpaper)\b/i.test(lastText)) {
-            type = "image";
-          } else if (/\b(code|coding|function|component|debug|algorithm|python|javascript|react|html|css|sql|script)\b/i.test(lastText)) {
+          } else if (/\b(code|coding|matlab|program|function|component|debug|algorithm|python|javascript|react|html|css|sql|script)\b/i.test(lastText)) {
             type = "coding";
+          } else if (
+            /\b(generate|create|render|draw|make|paint)\s+(an?\s+)?(image|picture|photo|illustration|logo|wallpaper|drawing|artwork|portrait|banner|avatar)\b/i.test(lastText) ||
+            /\b(picture\s+of|photo\s+of|image\s+of|painting\s+of|wallpaper\s+of|artwork\s+of)\b/i.test(lastText) ||
+            /^(draw|generate image|create image|paint)\b/i.test(lastText)
+          ) {
+            type = "image";
           } else if (/\b(search|news|weather|price|who is|latest|current date|today)\b/i.test(lastText)) {
             type = "search";
           }

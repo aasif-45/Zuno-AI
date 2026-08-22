@@ -28,29 +28,48 @@ export const router = async (state) => {
       return { ...state, agent: "imageAnalyzer" };
     }
 
-    // 1. If agent is explicitly specified by user (not auto), respect it directly
+    // 1. Check for strong explicit file/document output requests (e.g. "Deliver this as a pdf", "Create PPT")
+    if (/\b(deliver this as a (downloadable )?pdf|create (a )?pdf|generate (a )?pdf|export (as )?pdf)\b/i.test(lowerPrompt)) {
+      console.log(`⚡ [Agent Router] Fast-Path Direct Route: "-> pdf" for query: "${rawPrompt.slice(0, 50)}..."`);
+      return { ...state, agent: "pdf" };
+    }
+
+    if (/\b(deliver this as a (downloadable )?ppt|create (a )?ppt|generate (a )?ppt|create slides|presentation on)\b/i.test(lowerPrompt)) {
+      console.log(`⚡ [Agent Router] Fast-Path Direct Route: "-> ppt" for query: "${rawPrompt.slice(0, 50)}..."`);
+      return { ...state, agent: "ppt" };
+    }
+
+    // 2. If agent is explicitly specified by user (not auto)
     if (state.agent && state.agent !== "auto") {
       const userAgent = state.agent.toString().trim().toLowerCase().replace(/[^a-z]/g, "");
       if (userAgent === "image" || userAgent === "imagegen") {
-        return { ...state, agent: "imageGen" };
-      }
-      if (VALID_AGENTS.includes(userAgent)) {
+        // If user picked Image dropdown but prompt explicitly asks for PDF/Code, override with actual intent
+        if (!/\b(pdf|slides|presentation|powerpoint)\b/i.test(lowerPrompt)) {
+          return { ...state, agent: "imageGen" };
+        }
+      } else if (VALID_AGENTS.includes(userAgent)) {
         return { ...state, agent: userAgent };
       }
     }
 
-    // 2. Fast-Path Keyword Shortcuts (Instant 0ms Direct Routing)
+    // 3. Fast-Path Keyword Shortcuts (Instant 0ms Direct Routing)
     if (/\b(ppt|presentation|powerpoint|slides|slide deck)\b/i.test(lowerPrompt)) {
       console.log(`⚡ [Agent Router] Fast-Path Direct Route: "Auto -> ppt" for query: "${rawPrompt.slice(0, 50)}..."`);
       return { ...state, agent: "ppt" };
     }
 
-    if (/\b(pdf|generate pdf|create pdf)\b/i.test(lowerPrompt)) {
+    if (/\b(pdf|generate pdf|create pdf|downloadable pdf)\b/i.test(lowerPrompt)) {
       console.log(`⚡ [Agent Router] Fast-Path Direct Route: "Auto -> pdf" for query: "${rawPrompt.slice(0, 50)}..."`);
       return { ...state, agent: "pdf" };
     }
 
-    if (/\b(image|draw|generate image|create image|picture of|photo of|render image)\b/i.test(lowerPrompt)) {
+    // Strict Image Generation Regex (prevents false matches on "generalized", "regenerate", "drawing conclusions", etc.)
+    const isImageGenIntent =
+      /\b(generate|create|render|draw|make|paint)\s+(an?\s+)?(image|picture|photo|illustration|logo|wallpaper|drawing|artwork|portrait|banner|avatar)\b/i.test(lowerPrompt) ||
+      /\b(picture\s+of|photo\s+of|image\s+of|painting\s+of|wallpaper\s+of|artwork\s+of)\b/i.test(lowerPrompt) ||
+      /^(draw|generate image|create image|paint)\b/i.test(lowerPrompt);
+
+    if (isImageGenIntent && !/\b(code|program|matlab|python|javascript|pdf|ppt)\b/i.test(lowerPrompt)) {
       console.log(`⚡ [Agent Router] Fast-Path Direct Route: "Auto -> imageGen" for query: "${rawPrompt.slice(0, 50)}..."`);
       return { ...state, agent: "imageGen" };
     }
