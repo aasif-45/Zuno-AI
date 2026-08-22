@@ -8,6 +8,10 @@ async function logOut() {
   } finally {
     try {
       localStorage.removeItem("session_id");
+      localStorage.removeItem("lastConvId");
+      if (window.location.pathname !== "/" && window.location.pathname !== "") {
+        window.history.pushState(null, "", "/");
+      }
     } catch {}
   }
 }
