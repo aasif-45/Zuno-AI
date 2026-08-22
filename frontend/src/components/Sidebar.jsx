@@ -402,8 +402,8 @@ export default function Sidebar() {
                 <div className="flex h-8 w-8 shrink-0 items-center justify-center overflow-hidden rounded-full bg-[#10a37f] text-white font-semibold text-xs">
                   {userData?.avatar && !imageError ? (
                     <img
-                      src={userData.avatar}
-                      alt={userData.name || "User"}
+                      src={userData?.avatar}
+                      alt={userData?.name || "User"}
                       className="h-full w-full object-cover"
                       onError={() => setImageError(true)}
                     />
@@ -504,8 +504,8 @@ export default function Sidebar() {
             <div className="flex h-8 w-8 items-center justify-center overflow-hidden rounded-full bg-[#10a37f] text-white font-semibold text-xs">
               {userData?.avatar && !imageError ? (
                 <img
-                  src={userData.avatar}
-                  alt={userData.name || "Aasif"}
+                  src={userData?.avatar}
+                  alt={userData?.name || "Aasif"}
                   className="h-full w-full object-cover"
                   onError={() => setImageError(true)}
                 />

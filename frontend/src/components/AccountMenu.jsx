@@ -1,8 +1,10 @@
 import React, { useState } from "react";
-import { Sparkles, User, Settings, LogOut, ChevronRight } from "lucide-react";
+import { Sparkles, User, Settings, LogOut } from "lucide-react";
 import { useDispatch, useSelector } from "react-redux";
 import Logout from "../features/logOut.js";
 import { setUserData } from "../redux/userSlice.js";
+import { setConversation, setSelectedConversation } from "../redux/conversationSlice.js";
+import { clearMessages } from "../redux/messageSlice.js";
 
 export default function AccountMenu({
   isOpen = true,
@@ -15,8 +17,9 @@ export default function AccountMenu({
 }) {
   const { userData } = useSelector((state) => state.user || {});
   const [imageError, setImageError] = useState(false);
+  const dispatch = useDispatch();
 
-  if (!isOpen) return null;
+  if (!isOpen || !userData) return null;
 
   // Helper for initials
   const getUserInitials = (name) => {
@@ -27,9 +30,26 @@ export default function AccountMenu({
     }
     return name.slice(0, 2).toUpperCase();
   };
-  const dispatch = useDispatch();
-  const displayName = userData?.name || "Awesome tricky hackers";
+
+  const displayName = userData?.name || "User";
   const userInitials = getUserInitials(displayName);
+  const userPlan = userData?.plan || "Starter";
+
+  const handleLogoutClick = async () => {
+    onClose?.();
+    dispatch(setUserData(null));
+    dispatch(setConversation([]));
+    dispatch(setSelectedConversation(null));
+    dispatch(clearMessages());
+    try {
+      localStorage.removeItem("session_id");
+      localStorage.removeItem("lastConvId");
+    } catch (_) {}
+    try {
+      await Logout();
+    } catch (_) {}
+    if (onLogout) onLogout();
+  };
 
   return (
     <div
@@ -38,7 +58,10 @@ export default function AccountMenu({
     >
       {/* Top Profile Header Row */}
       <div
-        onClick={onProfile}
+        onClick={() => {
+          onProfile?.();
+          onClose?.();
+        }}
         className="flex items-center justify-between rounded-xl p-2 hover:bg-white/5 cursor-pointer transition-colors"
       >
         <div className="flex items-center gap-3 min-w-0">
@@ -59,7 +82,7 @@ export default function AccountMenu({
               {displayName}
             </span>
             <span className="truncate text-xs text-slate-400 leading-tight">
-              <span className="capitalize">{userData.plan} Plan</span>
+              <span className="capitalize">{userPlan} Plan</span>
             </span>
           </div>
         </div>
@@ -107,10 +130,7 @@ export default function AccountMenu({
 
       {/* 4. Log out */}
       <button
-        onClick={() => {
-          Logout();
-          dispatch(setUserData(null));
-        }}
+        onClick={handleLogoutClick}
         className="flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-sm text-slate-200 hover:bg-white/10 hover:text-white transition-colors cursor-pointer"
       >
         <LogOut size={18} className="text-slate-300" />
