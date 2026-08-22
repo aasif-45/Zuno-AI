@@ -9,7 +9,6 @@ import { vscDarkPlus } from "react-syntax-highlighter/dist/esm/styles/prism";
 import {
   Copy,
   Check,
-  RotateCcw,
   Sparkles,
   X,
   FileCode2,
@@ -651,7 +650,7 @@ export default function MessageBubble({
           </div>
         )}
 
-        {/* Clean Action Bar: Copy & Functional Regenerate */}
+        {/* Clean Action Bar: Copy Only */}
         <div className="flex items-center gap-2 mt-3 text-slate-400">
           <motion.button
             whileHover={{ scale: 1.08 }}
@@ -672,27 +671,6 @@ export default function MessageBubble({
               </>
             )}
           </motion.button>
-
-          {onRegenerate && (
-            <motion.button
-              whileHover={{ scale: 1.08 }}
-              whileTap={{ scale: 0.92 }}
-              onClick={async () => {
-                setIsRegenerating(true);
-                try {
-                  await onRegenerate();
-                } finally {
-                  setIsRegenerating(false);
-                }
-              }}
-              title="Regenerate"
-              disabled={isRegenerating}
-              className="flex h-7 items-center gap-1.5 px-2.5 rounded-lg bg-white/[0.04] hover:bg-white/10 hover:text-white border border-white/5 transition-colors cursor-pointer text-xs font-normal disabled:opacity-50"
-            >
-              <RotateCcw size={14} className={isRegenerating ? "animate-spin text-emerald-400" : ""} />
-              <span>{isRegenerating ? "Regenerating..." : "Regenerate"}</span>
-            </motion.button>
-          )}
         </div>
       </div>
 
