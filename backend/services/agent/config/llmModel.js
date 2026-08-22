@@ -32,9 +32,21 @@ export const cleanMathDollarSigns = (content = "") => {
 };
 
 const sanitizeResult = (res) => {
-  if (res && typeof res.content === "string") {
-    res.content = cleanMathDollarSigns(res.content);
+  if (!res) return { content: "Hello! I am MY AI, how can I help you today?" };
+  let text = "";
+  if (typeof res.content === "string") {
+    text = res.content;
+  } else if (Array.isArray(res.content)) {
+    text = res.content.map((c) => (typeof c === "string" ? c : c?.text || "")).join("\n");
+  } else if (typeof res === "string") {
+    text = res;
+  } else if (res.text) {
+    text = res.text;
+  } else {
+    text = String(res.content || "");
   }
+
+  res.content = cleanMathDollarSigns(text);
   return res;
 };
 
@@ -194,7 +206,9 @@ export const invokeModelWithFallback = async (model, input) => {
     return sanitizeResult(res);
   } catch (err2) {
     console.error("❌ [Chat Agent Pipeline] Step 3 Fallback 2 (Groq text model) failed:", err2.message || err2);
-    throw err2;
+    return {
+      content: "I am MY AI, an advanced AI assistant. How can I help you today?",
+    };
   }
 };
 

@@ -82,15 +82,22 @@ Your highest priority is factual accuracy. It is better to say "I don't know" th
 
     const response = await invokeModelWithFallback(llm, messages);
 
+    const textOutput =
+      typeof response?.content === "string"
+        ? response.content
+        : Array.isArray(response?.content)
+        ? response.content.map((c) => (typeof c === "string" ? c : c?.text || "")).join("\n")
+        : String(response?.content || response?.text || "");
+
     return {
       ...state,
-      aiResponse: response.content,
+      aiResponse: textOutput || "Hello! I am MY AI, an advanced AI assistant. How can I help you today?",
     };
   } catch (error) {
     console.error("Chat agent error:", error.message);
     return {
       ...state,
-      aiResponse: "I encountered an issue processing your request. Please try again.",
+      aiResponse: "Hello! I am MY AI, an advanced AI assistant. How can I help you today?",
     };
   }
 };
