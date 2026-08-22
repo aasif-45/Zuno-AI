@@ -4,7 +4,8 @@ const conversationSlice = createSlice({
   name: "conversation",
   initialState: {
     conversations: [],
-    selectedConversation:null
+    selectedConversation: null,
+    isMobileSidebarOpen: false,
   },
   reducers: {
     setConversation: (state, action) => {
@@ -32,8 +33,16 @@ const conversationSlice = createSlice({
     },
 
     setSelectedConversation: (state, action) => {
-      state.selectedConversation=action.payload;
-    }
+      state.selectedConversation = action.payload;
+    },
+
+    setMobileSidebarOpen: (state, action) => {
+      state.isMobileSidebarOpen = action.payload;
+    },
+
+    toggleMobileSidebar: (state) => {
+      state.isMobileSidebarOpen = !state.isMobileSidebarOpen;
+    },
   },
 });
 
@@ -42,7 +51,9 @@ export const {
   addConversation,
   removeConversation,
   updateConversation,
-  setSelectedConversation
+  setSelectedConversation,
+  setMobileSidebarOpen,
+  toggleMobileSidebar,
 } = conversationSlice.actions;
 
 export default conversationSlice.reducer;

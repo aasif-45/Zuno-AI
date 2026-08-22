@@ -82,7 +82,7 @@ export default function SettingsModal({ isOpen, onClose }) {
           animate={{ scale: 1, opacity: 1, y: 0 }}
           exit={{ scale: 0.95, opacity: 0, y: 15 }}
           transition={{ type: "spring", duration: 0.25 }}
-          className="relative w-full max-w-2xl overflow-hidden rounded-2xl bg-[#1e1e1e] border border-white/10 text-white shadow-2xl flex flex-col md:flex-row min-h-[480px] max-h-[85vh]"
+          className="relative w-full max-w-2xl mx-3 sm:mx-auto overflow-hidden rounded-2xl bg-[#1e1e1e] border border-white/10 text-white shadow-2xl flex flex-col md:flex-row min-h-[440px] max-h-[85vh]"
         >
           {/* Close Button Mobile/Global */}
           <button

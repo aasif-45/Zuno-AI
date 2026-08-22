@@ -273,9 +273,9 @@ export default function ChatInput() {
 
 
   return (
-    <div className="px-6 pb-5">
+    <div className="px-3 sm:px-6 pb-2.5 sm:pb-5">
       <form onSubmit={handleSubmit} className="mx-auto max-w-4xl">
-        <div className="rounded-[28px] border border-white/10 bg-[#2f2f2f] px-5 py-4 shadow-xl">
+        <div className="rounded-[22px] sm:rounded-[28px] border border-white/10 bg-[#2f2f2f] px-3.5 sm:px-5 py-2.5 sm:py-4 shadow-xl">
           {/* Attached file preview chip */}
           {attachedFile && (
             <div className="mb-3 flex items-center gap-2 rounded-xl border border-white/10 bg-white/5 px-3 py-2 w-fit max-w-full">
@@ -301,7 +301,7 @@ export default function ChatInput() {
             </div>
           )}
 
-          {/* Textarea */}
+          {/* Text Area */}
           <textarea
             ref={textareaRef}
             rows={1}
@@ -309,22 +309,7 @@ export default function ChatInput() {
             onChange={handleChange}
             placeholder="Ask Anything"
             disabled={loading}
-            className="
-              min-h-[28px]
-              max-h-[180px]
-              w-full
-              resize-none
-              overflow-y-auto
-              bg-transparent
-              text-[15px]
-              leading-7
-              text-white
-              placeholder:text-gray-500
-              focus:outline-none
-              disabled:opacity-50
-              [scrollbar-width:none]
-              [&::-webkit-scrollbar]:hidden
-            "
+            className="w-full resize-none bg-transparent text-sm sm:text-base text-white placeholder-gray-400 focus:outline-none disabled:opacity-50 min-h-[24px] max-h-[180px] leading-7 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
             onKeyDown={(e) => {
               if (e.key === "Enter" && !e.shiftKey) {
                 e.preventDefault();
@@ -333,18 +318,19 @@ export default function ChatInput() {
             }}
           />
 
-          {/* Bottom Toolbar */}
-          <div className="mt-3 flex items-center justify-between">
-            {/* Left Tools & Agent Selector */}
+          {/* Bottom Bar: Action buttons & Agent selector */}
+          <div className="mt-2.5 sm:mt-3 flex items-center justify-between">
+            {/* Left Controls: File Attachment & Agent Selector */}
             <div className="relative flex items-center gap-2" ref={menuRef}>
+              {/* File Attachment Button (PDF + Image) */}
               <button
                 type="button"
                 onClick={() => fileInputRef.current?.click()}
                 disabled={loading}
-                className="flex h-9 w-9 items-center justify-center rounded-full text-gray-400 transition hover:bg-white/10 hover:text-white cursor-pointer disabled:opacity-50"
+                className="flex h-8 w-8 sm:h-9 sm:w-9 items-center justify-center rounded-full text-gray-400 transition hover:bg-white/10 hover:text-white cursor-pointer disabled:opacity-50"
                 title="Attach a PDF or image"
               >
-                <Paperclip size={18} />
+                <Paperclip size={17} />
               </button>
 
               {/* Hidden native file input (PDF + images only) */}
@@ -381,13 +367,14 @@ export default function ChatInput() {
               <button
                 type="button"
                 onClick={() => setAgentMenuOpen((prev) => !prev)}
-                className="flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-3 py-1.5 text-xs font-medium text-gray-200 transition hover:bg-white/10 hover:border-white/20 cursor-pointer"
+                className="flex items-center gap-1.5 sm:gap-2 rounded-full border border-white/10 bg-white/5 px-2.5 sm:px-3 py-1 sm:py-1.5 text-xs font-medium text-gray-200 transition hover:bg-white/10 hover:border-white/20 cursor-pointer"
                 title="Select Agent Mode"
               >
                 <CurrentAgentIcon size={14} className={currentAgent.color} />
-                <span>{currentAgent.label}</span>
+                <span className="hidden xs:inline sm:inline">{currentAgent.label}</span>
+                <span className="xs:hidden sm:hidden">{currentAgent.label.split(" ")[0]}</span>
                 <ChevronDown
-                  size={14}
+                  size={13}
                   className={`text-gray-400 transition-transform duration-200 ${
                     agentMenuOpen ? "rotate-180" : "rotate-0"
                   }`}
@@ -402,7 +389,7 @@ export default function ChatInput() {
                     animate={{ opacity: 1, y: 0, scale: 1 }}
                     exit={{ opacity: 0, y: 8, scale: 0.95 }}
                     transition={{ duration: 0.18, ease: "easeOut" }}
-                    className="absolute bottom-full left-0 mb-2 w-72 sm:w-80 rounded-2xl border border-white/10 bg-[#252525] p-2 text-white shadow-2xl z-50 select-none"
+                    className="absolute bottom-full left-0 mb-2 w-[calc(100vw-36px)] max-w-sm sm:w-80 rounded-2xl border border-white/10 bg-[#252525] p-2 text-white shadow-2xl z-50 select-none"
                   >
                     <div className="px-3 py-1.5 text-[11px] font-semibold tracking-wider text-gray-400 uppercase">
                       Select Agent Mode
@@ -420,28 +407,28 @@ export default function ChatInput() {
                               setSelectedAgent(agentItem.id);
                               setAgentMenuOpen(false);
                             }}
-                            className={`flex items-center justify-between rounded-xl p-2.5 transition-colors cursor-pointer ${
+                            className={`flex items-center justify-between rounded-xl p-2 sm:p-2.5 transition-colors cursor-pointer ${
                               isSelected
                                 ? "bg-white/10 border border-white/10"
                                 : "hover:bg-white/5"
                             }`}
                           >
-                            <div className="flex items-center gap-3">
+                            <div className="flex items-center gap-2.5 sm:gap-3">
                               <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-white/5">
                                 <Icon size={16} className={agentItem.color} />
                               </div>
                               <div className="flex flex-col">
-                                <span className="text-sm font-medium text-white">
+                                <span className="text-xs sm:text-sm font-medium text-white">
                                   {agentItem.label}
                                 </span>
-                                <span className="text-xs text-gray-400 leading-tight">
+                                <span className="text-[11px] sm:text-xs text-gray-400 leading-tight">
                                   {agentItem.description}
                                 </span>
                               </div>
                             </div>
                             {isSelected && (
                               <Check
-                                size={16}
+                                size={15}
                                 className="text-white shrink-0 ml-2"
                               />
                             )}
@@ -454,16 +441,16 @@ export default function ChatInput() {
               </AnimatePresence>
             </div>
 
-            {/* Right Tools */}
-            <div className="flex items-center gap-2">
+            {/* Right Controls: Mic & Send Button */}
+            <div className="flex items-center gap-1.5 sm:gap-2">
               <motion.button
                 type="button"
                 whileHover={{ scale: 1.1 }}
                 whileTap={{ scale: 0.9 }}
-                className="flex h-9 w-9 items-center justify-center rounded-full text-gray-400 transition hover:bg-white/10 hover:text-white cursor-pointer"
+                className="flex h-8 w-8 sm:h-9 sm:w-9 items-center justify-center rounded-full text-gray-400 transition hover:bg-white/10 hover:text-white cursor-pointer"
                 title="Voice input"
               >
-                <Mic size={18} />
+                <Mic size={17} />
               </motion.button>
 
               <motion.button
@@ -471,22 +458,22 @@ export default function ChatInput() {
                 whileHover={(message.trim() || attachedFile) && !loading ? { scale: 1.08 } : {}}
                 whileTap={(message.trim() || attachedFile) && !loading ? { scale: 0.92 } : {}}
                 disabled={(!message.trim() && !attachedFile) || loading}
-                className={`flex h-9 w-9 items-center justify-center rounded-full transition ${
+                className={`flex h-8 w-8 sm:h-9 sm:w-9 items-center justify-center rounded-full transition cursor-pointer ${
                   (message.trim() || attachedFile) && !loading
-                    ? "bg-white text-black hover:bg-gray-200 cursor-pointer shadow-md"
-                    : "cursor-not-allowed bg-[#3c3c3c] text-gray-500"
+                    ? "bg-white text-black hover:bg-gray-200 shadow-md"
+                    : "bg-white/10 text-gray-500 cursor-not-allowed"
                 }`}
                 title="Send message"
               >
-                <ArrowUp size={16} strokeWidth={2.5} />
+                <ArrowUp size={17} strokeWidth={2.5} />
               </motion.button>
             </div>
           </div>
         </div>
 
-        <p className="mt-3 text-center text-xs text-gray-500">
+        <div className="text-center text-[10.5px] sm:text-xs text-gray-500 mt-2 px-2 select-none truncate">
           MY-AI can make mistakes. Please verify important information.
-        </p>
+        </div>
       </form>
     </div>
   );

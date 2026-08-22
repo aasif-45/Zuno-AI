@@ -432,7 +432,7 @@ export default function MessageBubble({
             initial={{ opacity: 0, y: 8, scale: 0.98 }}
             animate={{ opacity: 1, y: 0, scale: 1 }}
             transition={{ duration: 0.25, ease: [0.16, 1, 0.3, 1] }}
-            className="max-w-xl rounded-3xl bg-[#2f2f2f] px-5 py-2.5 text-[15px] leading-relaxed text-white font-normal shadow-sm select-text"
+            className="max-w-[88%] sm:max-w-xl rounded-2xl sm:rounded-3xl bg-[#2f2f2f] px-4 sm:px-5 py-2 sm:py-2.5 text-sm sm:text-[15px] leading-relaxed text-white font-normal shadow-sm select-text"
           >
             {content}
           </motion.div>
@@ -446,9 +446,9 @@ export default function MessageBubble({
       initial={{ opacity: 0, y: 8 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.25, ease: [0.16, 1, 0.3, 1] }}
-      className="flex w-full justify-start my-4"
+      className="flex w-full justify-start my-3 sm:my-4"
     >
-      <div className="max-w-3xl flex-1 text-[15px] leading-7 text-slate-100 select-text">
+      <div className="max-w-3xl flex-1 text-sm sm:text-[15px] leading-relaxed sm:leading-7 text-slate-100 select-text min-w-0">
         {/* 1. Images Gallery FIRST in a 4-column horizontal grid */}
         {allImages.length > 0 && (
           <div

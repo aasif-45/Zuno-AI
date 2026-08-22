@@ -26,6 +26,7 @@ import {
   removeConversation,
   updateConversation,
   setSelectedConversation,
+  setMobileSidebarOpen,
 } from "../redux/conversationSlice";
 
 export default function Sidebar() {
@@ -56,7 +57,7 @@ export default function Sidebar() {
   const [editingTitle, setEditingTitle] = useState("");
 
   const dispatch = useDispatch();
-  const { conversations, selectedConversation } = useSelector(
+  const { conversations, selectedConversation, isMobileSidebarOpen } = useSelector(
     (state) => state.conversation
   );
   const { userData } = useSelector((state) => state.user);
@@ -150,6 +151,7 @@ export default function Sidebar() {
   const handleNewChat = () => {
     localStorage.removeItem("lastConvId");
     dispatch(setSelectedConversation(null));
+    dispatch(setMobileSidebarOpen(false));
     if (window.location.pathname !== "/") {
       window.history.pushState(null, "", "/");
     }
@@ -222,45 +224,72 @@ export default function Sidebar() {
   };
 
   return (
-    <aside
-      className={`relative z-40 flex h-screen flex-col bg-black text-white transition-all duration-300 ease-in-out shrink-0 select-none ${collapsed ? "w-[56px]" : "w-[260px]"
-        }`}
-    >
-      {!collapsed ? (
-        /* ================= EXPANDED SIDEBAR ================= */
-        <>
-          {/* --- TOP HEADER --- */}
-          <div className="flex h-14 items-center justify-between px-3.5 shrink-0">
-            {/* Left Logo */}
-            <div
-              onClick={handleNewChat}
-              className="flex items-center gap-2 cursor-pointer hover:opacity-80 transition-opacity"
-              title="New chat"
-            >
-              <div className="flex h-7 w-7 items-center justify-center rounded-full bg-white/10 text-white">
-                <Sparkles size={16} />
-              </div>
-              <div className="font-bold font-serif">MY-AI</div>
-            </div>
+    <>
+      {/* Mobile Drawer Overlay Backdrop */}
+      <AnimatePresence>
+        {isMobileSidebarOpen && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            onClick={() => dispatch(setMobileSidebarOpen(false))}
+            className="md:hidden fixed inset-0 z-40 bg-black/75 backdrop-blur-xs"
+          />
+        )}
+      </AnimatePresence>
 
-            {/* Right Action Icons (Search & Close) */}
-            <div className="flex items-center gap-1 text-slate-400">
-              <button
-                onClick={() => setShowSearch(!showSearch)}
-                title="Search"
-                className="flex h-8 w-8 items-center justify-center rounded-lg hover:bg-white/10 hover:text-white transition-colors cursor-pointer"
+      <aside
+        className={`
+          fixed md:relative inset-y-0 left-0 z-50 md:z-40
+          flex h-screen flex-col bg-black text-white
+          transition-all duration-300 ease-in-out shrink-0 select-none
+          ${isMobileSidebarOpen
+            ? "translate-x-0 shadow-2xl w-[280px]"
+            : "-translate-x-full md:translate-x-0 " + (collapsed ? "md:w-[56px]" : "md:w-[260px]")
+          }
+        `}
+      >
+        {!collapsed ? (
+          /* ================= EXPANDED SIDEBAR ================= */
+          <>
+            {/* --- TOP HEADER --- */}
+            <div className="flex h-14 items-center justify-between px-3.5 shrink-0">
+              {/* Left Logo */}
+              <div
+                onClick={handleNewChat}
+                className="flex items-center gap-2 cursor-pointer hover:opacity-80 transition-opacity"
+                title="New chat"
               >
-                <Search size={18} />
-              </button>
-              <button
-                onClick={() => setCollapsed(!collapsed)}
-                title="Close sidebar"
-                className="flex h-8 w-8 items-center justify-center rounded-lg hover:bg-white/10 hover:text-white transition-colors cursor-pointer"
-              >
-                <PanelLeft size={18} />
-              </button>
+                <div className="flex h-7 w-7 items-center justify-center rounded-full bg-white/10 text-white">
+                  <Sparkles size={16} />
+                </div>
+                <div className="font-bold font-serif">MY-AI</div>
+              </div>
+
+              {/* Right Action Icons (Search & Close) */}
+              <div className="flex items-center gap-1 text-slate-400">
+                <button
+                  onClick={() => setShowSearch(!showSearch)}
+                  title="Search"
+                  className="flex h-8 w-8 items-center justify-center rounded-lg hover:bg-white/10 hover:text-white transition-colors cursor-pointer"
+                >
+                  <Search size={18} />
+                </button>
+                <button
+                  onClick={() => {
+                    if (isMobileSidebarOpen) {
+                      dispatch(setMobileSidebarOpen(false));
+                    } else {
+                      setCollapsed(!collapsed);
+                    }
+                  }}
+                  title="Close sidebar"
+                  className="flex h-8 w-8 items-center justify-center rounded-lg hover:bg-white/10 hover:text-white transition-colors cursor-pointer"
+                >
+                  <PanelLeft size={18} />
+                </button>
+              </div>
             </div>
-          </div>
 
           {/* --- MAIN CONTENT --- */}
           <div className="flex flex-1 min-h-0 flex-col px-2 py-1 gap-1 overflow-hidden">
@@ -324,7 +353,10 @@ export default function Sidebar() {
                       key={conv._id}
                       whileHover={{ x: 2 }}
                       whileTap={{ scale: 0.99 }}
-                      onClick={() => dispatch(setSelectedConversation(conv))}
+                      onClick={() => {
+                        dispatch(setSelectedConversation(conv));
+                        dispatch(setMobileSidebarOpen(false));
+                      }}
                       className={`group relative flex items-center justify-between rounded-xl px-3 py-2 text-sm transition-colors cursor-pointer ${isActive
                           ? "bg-[#212121] text-white font-medium"
                           : "text-slate-200 hover:bg-white/10 hover:text-white"
@@ -549,6 +581,7 @@ export default function Sidebar() {
         onClose={() => setShowSettingsModal(false)}
       />
     </aside>
+    </>
   );
 }
 
