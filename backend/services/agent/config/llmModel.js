@@ -50,11 +50,11 @@ const sanitizeResult = (res) => {
   return res;
 };
 
-export const getGroq = () => {
+export const getGroq = (modelName = "openai/gpt-oss-120b") => {
   if (!groqInstance) {
     groqInstance = new ChatGroq({
       apiKey: process.env.GROQ_API_KEY || "",
-      model: "llama-3.3-70b-versatile",
+      model: modelName,
       maxRetries: 2,
     });
   }
