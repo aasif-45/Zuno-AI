@@ -10,13 +10,20 @@ import { setMessage, clearMessages } from "../redux/messageSlice.js";
 export default function ChatArea() {
   const dispatch = useDispatch();
   const { selectedConversation } = useSelector((state) => state.conversation);
-  const { messages } = useSelector((state) => state.message);
+  const { messages, activeArtifact: reduxActiveArtifact } = useSelector((state) => state.message);
 
   const [activeArtifact, setActiveArtifact] = useState({
     open: false,
     artifact: null,
     selectedFile: null,
   });
+
+  // Sync Redux activeArtifact changes (e.g. from new message responses or card clicks) to local state
+  useEffect(() => {
+    if (reduxActiveArtifact && reduxActiveArtifact.open) {
+      setActiveArtifact(reduxActiveArtifact);
+    }
+  }, [reduxActiveArtifact]);
 
   useEffect(() => {
     const convId = selectedConversation?._id;
@@ -41,8 +48,6 @@ export default function ChatArea() {
       };
       getMess();
     }
-
-    setActiveArtifact({ open: false, artifact: null, selectedFile: null });
   }, [selectedConversation?._id, dispatch]);
 
   const handleOpenArtifact = (artifact) => {

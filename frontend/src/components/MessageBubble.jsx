@@ -638,6 +638,61 @@ export default function MessageBubble({
           </div>
         )}
 
+        {/* Artifact Cards (Claude / ChatGPT style clickable project & document badges) */}
+        {hasArtifacts && (
+          <div className="space-y-2.5 my-3">
+            {artifacts.map((art, idx) => {
+              const fileCount = Array.isArray(art?.files) ? art.files.length : 0;
+              const isProject = art?.type === "project" || fileCount > 1;
+              const isPpt = art?.type === "ppt" || art?.title?.endsWith(".pptx");
+              const isPdf = art?.type === "pdf" || art?.title?.endsWith(".pdf");
+
+              return (
+                <motion.div
+                  key={art.id || idx}
+                  whileHover={{ scale: 1.01 }}
+                  whileTap={{ scale: 0.99 }}
+                  onClick={() => {
+                    if (onOpenArtifact) onOpenArtifact(art);
+                    dispatch(openArtifact(art));
+                  }}
+                  className="flex items-center justify-between p-3.5 bg-[#282828] hover:bg-[#323232] border border-white/10 rounded-2xl cursor-pointer transition-all shadow-md group"
+                >
+                  <div className="flex items-center gap-3 min-w-0">
+                    <div className="w-10 h-10 rounded-xl bg-white/5 border border-white/10 flex items-center justify-center text-slate-200 group-hover:text-white transition-colors shrink-0">
+                      {isPpt ? (
+                        <Presentation size={20} />
+                      ) : isPdf ? (
+                        <FileText size={20} />
+                      ) : (
+                        <FileCode2 size={20} />
+                      )}
+                    </div>
+                    <div className="min-w-0">
+                      <div className="flex items-center gap-2">
+                        <span className="text-sm font-medium text-slate-100 truncate group-hover:text-white">
+                          {art.title || "Project Artifact"}
+                        </span>
+                        <span className="text-[10px] bg-white/10 text-slate-300 font-medium px-2 py-0.5 rounded-full shrink-0">
+                          {isPpt ? "PowerPoint" : isPdf ? "PDF Document" : `${fileCount || 1} files`}
+                        </span>
+                      </div>
+                      <p className="text-xs text-slate-400 mt-0.5 truncate">
+                        Click to view, edit, and run code in Artifact panel
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="flex items-center gap-2 text-slate-400 group-hover:text-slate-200 shrink-0 ml-3">
+                    <span className="text-xs font-medium hidden sm:inline">Open</span>
+                    <ChevronRight size={16} />
+                  </div>
+                </motion.div>
+              );
+            })}
+          </div>
+        )}
+
         {/* ChatGPT Style Bottom Action Bar */}
         <div className="flex items-center gap-1.5 mt-3 text-slate-400">
           <motion.button

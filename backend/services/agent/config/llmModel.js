@@ -138,7 +138,7 @@ export const getModel = async (type = "chat") => {
       return getGroq();
 
     case "coding":
-      return getOpenCodeCodingModel() || getGemini() || getOpenRouterDeepSeek() || getGroq();
+      return getGemini() || getOpenRouterDeepSeek() || getGroq();
 
     case "imageAnalyzer":
       return getGemini();

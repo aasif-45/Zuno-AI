@@ -300,6 +300,22 @@ ${prompt}
         `**[Download Presentation (.pptx)](${downloadUrl})**\n\n` +
         `*The download link expires in 24 hours.*${sourceFooterText}`,
 
+      artifacts: [
+        {
+          id: randomUUID(),
+          type: "ppt",
+          title: `${safeTitle}.pptx`,
+          downloadUrl: downloadUrl,
+          url: downloadUrl,
+          files: [
+            {
+              name: `${safeTitle}.pptx`,
+              url: downloadUrl,
+              content: `# ${data.title}\n\n${data.subtitle || ""}\n\n[Download PPTX](${downloadUrl})`,
+            },
+          ],
+        },
+      ],
       files: [
         {
           type: "pptx",

@@ -7,50 +7,26 @@ import {
 
 export const codingAgent = async (state) => {
   try {
+    const rawPrompt = (state.prompt || "").trim();
+    const lowerPrompt = rawPrompt.toLowerCase();
+
     // ---------------------------
-    // Step 1: Detect Coding Intent
+    // Step 1: Detect Intent (Fast Regex + Fallback)
     // ---------------------------
-    const intentLLM = await getModel("intent");
+    const isProjectRequest =
+      /\b(make|build|create|generate|write|develop|design)\s+(a\s+|an\s+)?(calculator|app|website|web app|game|dashboard|landing page|clone|portfolio|component|tool|ui|todo list|weather app|timer|form)\b/i.test(lowerPrompt) ||
+      /\b(html|css|javascript|frontend|react|full project|multi-file)\b/i.test(lowerPrompt);
 
-    const intentPrompt = `
-You are a coding request classifier.
-
-Choose EXACTLY one label:
-
-- project_generation: User explicitly wants a full web app, website, UI component, dashboard, landing page, or multi-file web project (HTML/CSS/JS, React, etc.).
-- algo_dsa_code: User asks for a Data Structure, Algorithm (e.g., insertion sort, binary search, sorting, tree, graph, dynamic programming), code snippet, standalone function, script, or DSA problem.
-- code_review: User wants code reviewed.
-- code_explanation: User wants code explained.
-- debugging: User wants to debug an error or fix code.
-- optimization: User wants to optimize performance or memory.
-- conversion: User wants code translated from one language to another.
-
-Reply ONLY with the exact label.
-
-User Request:
-${state.prompt}
-`;
-
-    const intentResponse = await invokeModelWithFallback(
-      intentLLM,
-      intentPrompt
-    );
-
-    const intent = (intentResponse?.content || "")
-      .trim()
-      .toLowerCase()
-      .replace(/[^\w]/g, "_");
+    let intent = isProjectRequest ? "project_generation" : "algo_dsa_code";
 
     const llm = await getModel("coding");
 
     const systemPrompt = `
-You are MY-AI, an expert software engineering and computer science assistant.
-
+You are MY-AI, an expert software engineering assistant.
 Rules:
-- Produce clean, production-ready, well-formatted code.
+- Produce clean, production-ready, beautiful, well-formatted code.
 - Follow modern best practices.
-- Format responses using GitHub Flavored Markdown (GFM).
-- Use proper fenced code blocks with language identifiers.
+- For full web apps, generate clean modern HTML5, CSS3, and JavaScript.
 `;
 
     // ---------------------------
@@ -58,20 +34,17 @@ Rules:
     // ---------------------------
     if (intent === "project_generation") {
       const generationPrompt = `
-Generate a full multi-file web project artifact for this user request.
+Generate a full, working multi-file web application artifact for: "${rawPrompt}".
 
 Default stack:
-- index.html
-- styles.css
-- script.js (or app.js)
+- index.html (semantic HTML, links styles.css and script.js, modern layout)
+- styles.css (modern responsive dark/light styling, clean CSS variables, smooth animations)
+- script.js (interactive, bug-free, fully functional vanilla JavaScript)
 
 Requirements:
-- Responsive, modern UI design
-- Semantic HTML
-- Clean CSS variables
-- Well commented code
-
-Return ONLY valid JSON. No markdown wrappers.
+- Responsive, sleek modern UI design
+- Fully working interactive features (e.g. if calculator, all buttons and math work)
+- Return ONLY valid JSON with no markdown wrapping.
 
 Schema:
 {
@@ -90,9 +63,6 @@ Schema:
     }
   ]
 }
-
-User Request:
-${state.prompt}
 `;
 
       const messages = buildCleanLLMMessages(
@@ -102,31 +72,33 @@ ${state.prompt}
       );
 
       const response = await invokeModelWithFallback(llm, messages);
+      const rawContent = response?.content || "";
 
-      let data;
+      let data = null;
       try {
-        data = JSON.parse(response.content);
-      } catch {
-        const match = response.content.match(/\{[\s\S]*\}/);
-        if (!match) {
-          throw new Error("Invalid JSON returned by model.");
+        const jsonMatch = rawContent.match(/\{[\s\S]*\}/);
+        if (jsonMatch) {
+          data = JSON.parse(jsonMatch[0]);
         }
-        data = JSON.parse(match[0]);
+      } catch (parseErr) {
+        console.warn("JSON parse warning in coding agent:", parseErr.message);
       }
 
-      return {
-        ...state,
-        intent,
-        aiResponse: `Here is your complete project for **"${state.prompt}"**:`,
-        artifacts: [
-          {
-            id: randomUUID(),
-            type: "project",
-            title: state.prompt,
-            files: data.files || [],
-          },
-        ],
-      };
+      if (data && Array.isArray(data.files) && data.files.length > 0) {
+        return {
+          ...state,
+          intent,
+          aiResponse: `Here is your complete, interactive project for **"${rawPrompt}"**. You can preview, edit, and download the code in the Artifact panel!`,
+          artifacts: [
+            {
+              id: randomUUID(),
+              type: "project",
+              title: rawPrompt.length > 40 ? rawPrompt.slice(0, 40) + "..." : rawPrompt,
+              files: data.files,
+            },
+          ],
+        };
+      }
     }
 
     // ---------------------------
