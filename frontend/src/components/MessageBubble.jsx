@@ -170,6 +170,19 @@ export default function MessageBubble({
 
   const hasArtifacts = Array.isArray(artifacts) && artifacts.length > 0;
 
+  // Determine if this message is an Image, PDF, or PPT response so we hide the copy button
+  const hasArtifactPpt = Array.isArray(artifacts) && artifacts.some(
+    (art) => art?.type === "ppt" || art?.title?.endsWith(".pptx")
+  );
+  const hasArtifactPdf = Array.isArray(artifacts) && artifacts.some(
+    (art) => art?.type === "pdf" || art?.title?.endsWith(".pdf")
+  );
+  const hasImages = Array.isArray(allImages) && allImages.length > 0;
+  const isImageOrDoc = hasImages || hasArtifactPpt || hasArtifactPdf;
+
+  const shouldShowCopy =
+    Boolean(cleanText && cleanText.trim().length > 0) && !isImageOrDoc;
+
   // If not loading and has no content, images, or artifacts, do not render empty bubble
   if (!isLoading && !cleanText && allImages.length === 0 && !hasArtifacts) {
     return null;
@@ -688,28 +701,30 @@ export default function MessageBubble({
           </div>
         )}
 
-        {/* Clean Action Bar: Copy Only */}
-        <div className="flex items-center gap-2 mt-3 text-slate-400">
-          <motion.button
-            whileHover={{ scale: 1.08 }}
-            whileTap={{ scale: 0.92 }}
-            onClick={handleCopyText}
-            title="Copy"
-            className="flex h-7 items-center gap-1.5 px-2.5 rounded-lg bg-white/[0.04] hover:bg-white/10 hover:text-white border border-white/5 transition-colors cursor-pointer text-xs font-normal"
-          >
-            {copiedText ? (
-              <>
-                <Check size={14} className="text-emerald-400" />
-                <span className="text-emerald-400 font-medium">Copied</span>
-              </>
-            ) : (
-              <>
-                <Copy size={14} />
-                <span>Copy</span>
-              </>
-            )}
-          </motion.button>
-        </div>
+        {/* Clean Action Bar: Copy Only (Hidden on Image, PDF, and PPT responses) */}
+        {shouldShowCopy && (
+          <div className="flex items-center gap-2 mt-3 text-slate-400">
+            <motion.button
+              whileHover={{ scale: 1.08 }}
+              whileTap={{ scale: 0.92 }}
+              onClick={handleCopyText}
+              title="Copy"
+              className="flex h-7 items-center gap-1.5 px-2.5 rounded-lg bg-white/[0.04] hover:bg-white/10 hover:text-white border border-white/5 transition-colors cursor-pointer text-xs font-normal"
+            >
+              {copiedText ? (
+                <>
+                  <Check size={14} className="text-emerald-400" />
+                  <span className="text-emerald-400 font-medium">Copied</span>
+                </>
+              ) : (
+                <>
+                  <Copy size={14} />
+                  <span>Copy</span>
+                </>
+              )}
+            </motion.button>
+          </div>
+        )}
       </div>
 
       {/* Lightbox Modal */}
