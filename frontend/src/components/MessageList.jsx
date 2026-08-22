@@ -1,9 +1,14 @@
 import React, { useEffect, useRef, useState, useMemo } from "react";
-import { useSelector } from "react-redux";
+import { useSelector, useDispatch } from "react-redux";
 import { ArrowDown } from "lucide-react";
 import MessageBubble from "./MessageBubble.jsx";
+import sendMessage from "../features/sendMessage.js";
+import { addMessage, setLoading } from "../redux/messageSlice.js";
+import { getCurrentuser } from "../features/getCurrentUser.js";
+import { setUserData } from "../redux/userSlice.js";
 
 export default function MessageList({ onOpenArtifact }) {
+  const dispatch = useDispatch();
   const { selectedConversation } = useSelector(
     (state) => state.conversation
   );
@@ -39,6 +44,60 @@ export default function MessageList({ onOpenArtifact }) {
     return -1;
   }, [validMessages]);
 
+  const handleRegenerate = async (msgIndex) => {
+    if (loading) return;
+
+    // Find the user prompt for this turn (preceding user message)
+    let targetUserMsg = null;
+    for (let i = msgIndex - 1; i >= 0; i--) {
+      if (validMessages[i]?.role === "user") {
+        targetUserMsg = validMessages[i];
+        break;
+      }
+    }
+    if (!targetUserMsg?.content) return;
+
+    const convId = selectedConversation?._id;
+    if (!convId) return;
+
+    try {
+      dispatch(setLoading(true));
+      const res = await sendMessage(targetUserMsg.content, convId, "auto");
+      if (res) {
+        dispatch(
+          addMessage({
+            _id: (Date.now() + 1).toString(),
+            role: "assistant",
+            content: res.aiResponse || res.content || "",
+            images: Array.isArray(res.images) ? res.images : [],
+            artifacts: Array.isArray(res.artifacts) ? res.artifacts : [],
+            conversationId: convId,
+          })
+        );
+      }
+
+      // Refresh credits
+      try {
+        const updatedUser = await getCurrentuser();
+        if (updatedUser) dispatch(setUserData(updatedUser));
+      } catch (e) {
+        console.warn("Credit refresh warning:", e);
+      }
+    } catch (err) {
+      console.error("Regenerate failed:", err);
+      dispatch(
+        addMessage({
+          _id: (Date.now() + 1).toString(),
+          role: "assistant",
+          content: err?.response?.data?.message || "Failed to regenerate response. Please try again.",
+          conversationId: convId,
+        })
+      );
+    } finally {
+      dispatch(setLoading(false));
+    }
+  };
+
   const scrollToBottom = () => {
     if (messagesEndRef.current) {
       messagesEndRef.current.scrollIntoView({
@@ -60,14 +119,15 @@ export default function MessageList({ onOpenArtifact }) {
   };
 
   useEffect(() => {
-    scrollToPrompt();
-  }, [validMessages.length, loading]);
+    if (validMessages.length > 0) {
+      setTimeout(() => scrollToPrompt(), 60);
+    }
+  }, [validMessages.length]);
 
   const handleScroll = () => {
     if (!listRef.current) return;
     const { scrollTop, scrollHeight, clientHeight } = listRef.current;
-    const isScrolledUp = scrollHeight - scrollTop - clientHeight > 100;
-    setShowScrollBottom(isScrolledUp);
+    setShowScrollBottom(scrollHeight - scrollTop - clientHeight > 150);
   };
 
   // If valid messages list is empty and not loading, show landing state
@@ -117,6 +177,7 @@ export default function MessageList({ onOpenArtifact }) {
       <div className="mx-auto max-w-3xl space-y-4 pb-4">
         {validMessages.map((msg, idx) => {
           const isLatestUser = idx === lastUserIndex;
+          const isAssistant = msg?.role === "assistant";
           return (
             <div
               key={msg._id || msg.id || idx}
@@ -132,6 +193,7 @@ export default function MessageList({ onOpenArtifact }) {
                 fileType={msg?.fileType}
                 filePreviewUrl={msg?.filePreviewUrl}
                 onOpenArtifact={onOpenArtifact}
+                onRegenerate={isAssistant ? () => handleRegenerate(idx) : null}
               />
             </div>
           );

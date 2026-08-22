@@ -9,11 +9,7 @@ import { vscDarkPlus } from "react-syntax-highlighter/dist/esm/styles/prism";
 import {
   Copy,
   Check,
-  ThumbsUp,
-  ThumbsDown,
-  Share2,
   RotateCcw,
-  MoreHorizontal,
   Sparkles,
   X,
   FileCode2,
@@ -112,6 +108,7 @@ export default function MessageBubble({
   fileType = null,
   filePreviewUrl = null,
   onOpenArtifact,
+  onRegenerate,
   isLoading = false,
   loadingType = "chat",
   isImageLoading = false,
@@ -120,7 +117,7 @@ export default function MessageBubble({
   const isUser = role === "user";
   const [copiedText, setCopiedText] = useState(false);
   const [copiedCodeStr, setCopiedCodeStr] = useState(null);
-  const [liked, setLiked] = useState(null); // 'up' | 'down' | null
+  const [isRegenerating, setIsRegenerating] = useState(false);
   const [lightBox, setLightBox] = useState(null);
 
   // Extract all images and clean content so images appear FIRST at top of bubble
@@ -654,68 +651,48 @@ export default function MessageBubble({
           </div>
         )}
 
-        {/* ChatGPT Style Bottom Action Bar */}
-        <div className="flex items-center gap-1.5 mt-3 text-slate-400">
+        {/* Clean Action Bar: Copy & Functional Regenerate */}
+        <div className="flex items-center gap-2 mt-3 text-slate-400">
           <motion.button
-            whileHover={{ scale: 1.12 }}
-            whileTap={{ scale: 0.9 }}
+            whileHover={{ scale: 1.08 }}
+            whileTap={{ scale: 0.92 }}
             onClick={handleCopyText}
             title="Copy"
-            className="flex h-7 w-7 items-center justify-center rounded-md hover:bg-white/10 hover:text-white transition-colors cursor-pointer"
+            className="flex h-7 items-center gap-1.5 px-2.5 rounded-lg bg-white/[0.04] hover:bg-white/10 hover:text-white border border-white/5 transition-colors cursor-pointer text-xs font-normal"
           >
-            {copiedText ? <Check size={15} className="text-emerald-400" /> : <Copy size={15} />}
+            {copiedText ? (
+              <>
+                <Check size={14} className="text-emerald-400" />
+                <span className="text-emerald-400 font-medium">Copied</span>
+              </>
+            ) : (
+              <>
+                <Copy size={14} />
+                <span>Copy</span>
+              </>
+            )}
           </motion.button>
 
-          <motion.button
-            whileHover={{ scale: 1.12 }}
-            whileTap={{ scale: 0.9 }}
-            onClick={() => setLiked(liked === "up" ? null : "up")}
-            title="Good response"
-            className={`flex h-7 w-7 items-center justify-center rounded-md hover:bg-white/10 transition-colors cursor-pointer ${
-              liked === "up" ? "text-emerald-400" : "hover:text-white"
-            }`}
-          >
-            <ThumbsUp size={15} />
-          </motion.button>
-
-          <motion.button
-            whileHover={{ scale: 1.12 }}
-            whileTap={{ scale: 0.9 }}
-            onClick={() => setLiked(liked === "down" ? null : "down")}
-            title="Bad response"
-            className={`flex h-7 w-7 items-center justify-center rounded-md hover:bg-white/10 transition-colors cursor-pointer ${
-              liked === "down" ? "text-rose-400" : "hover:text-white"
-            }`}
-          >
-            <ThumbsDown size={15} />
-          </motion.button>
-
-          <motion.button
-            whileHover={{ scale: 1.12 }}
-            whileTap={{ scale: 0.9 }}
-            title="Share"
-            className="flex h-7 w-7 items-center justify-center rounded-md hover:bg-white/10 hover:text-white transition-colors cursor-pointer"
-          >
-            <Share2 size={15} />
-          </motion.button>
-
-          <motion.button
-            whileHover={{ scale: 1.12 }}
-            whileTap={{ scale: 0.9 }}
-            title="Regenerate"
-            className="flex h-7 w-7 items-center justify-center rounded-md hover:bg-white/10 hover:text-white transition-colors cursor-pointer"
-          >
-            <RotateCcw size={15} />
-          </motion.button>
-
-          <motion.button
-            whileHover={{ scale: 1.12 }}
-            whileTap={{ scale: 0.9 }}
-            title="More"
-            className="flex h-7 w-7 items-center justify-center rounded-md hover:bg-white/10 hover:text-white transition-colors cursor-pointer"
-          >
-            <MoreHorizontal size={15} />
-          </motion.button>
+          {onRegenerate && (
+            <motion.button
+              whileHover={{ scale: 1.08 }}
+              whileTap={{ scale: 0.92 }}
+              onClick={async () => {
+                setIsRegenerating(true);
+                try {
+                  await onRegenerate();
+                } finally {
+                  setIsRegenerating(false);
+                }
+              }}
+              title="Regenerate"
+              disabled={isRegenerating}
+              className="flex h-7 items-center gap-1.5 px-2.5 rounded-lg bg-white/[0.04] hover:bg-white/10 hover:text-white border border-white/5 transition-colors cursor-pointer text-xs font-normal disabled:opacity-50"
+            >
+              <RotateCcw size={14} className={isRegenerating ? "animate-spin text-emerald-400" : ""} />
+              <span>{isRegenerating ? "Regenerating..." : "Regenerate"}</span>
+            </motion.button>
+          )}
         </div>
       </div>
 
