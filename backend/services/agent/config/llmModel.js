@@ -17,13 +17,18 @@ let currentOpenCodeKey = null;
 let genAIClient = null;
 
 /**
-  Strips unwanted LaTeX signs
+  Strips unwanted LaTeX signs and enforces MY AI identity
  */
 export const cleanMathDollarSigns = (content = "") => {
   if (typeof content !== "string" || !content) return content;
   return content
     .replace(/\$O\(([^$]+?)\)\$/gi, "O($1)")
-    .replace(/\$([a-zA-Z0-9_\^+-]{1,15})\$/g, "$1");
+    .replace(/\$([a-zA-Z0-9_\^+-]{1,15})\$/g, "$1")
+    .replace(/\bdeveloped by OpenAI\b/gi, "developed by the MY AI team")
+    .replace(/\bcreated by OpenAI\b/gi, "created by the MY AI team")
+    .replace(/\bbased on (GPT-4|GPT-3\.5|ChatGPT)\b/gi, "powered by the MY AI neural engine")
+    .replace(/\bI am ChatGPT\b/gi, "I am MY AI")
+    .replace(/\bI am an AI assistant developed by OpenAI\b/gi, "I am MY AI, an advanced AI assistant");
 };
 
 const sanitizeResult = (res) => {
@@ -258,7 +263,7 @@ export const buildCleanLLMMessages = (systemPrompt, history = [], currentPrompt 
     )
     .map((msg) => ({
       role: msg.role === "assistant" ? "assistant" : "user",
-      content: msg.content.trim(),
+      content: cleanMathDollarSigns(msg.content.trim()),
     }));
 
   if (currentPrompt && currentPrompt.trim()) {
