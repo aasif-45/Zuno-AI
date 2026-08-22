@@ -29,7 +29,13 @@ import {
 } from "../redux/conversationSlice";
 
 export default function Sidebar() {
-  const [collapsed, setCollapsed] = useState(false);
+  const [collapsed, setCollapsed] = useState(() => {
+    try {
+      return localStorage.getItem("sidebar_collapsed") === "true";
+    } catch {
+      return false;
+    }
+  });
   const [imageError, setImageError] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [showSearch, setShowSearch] = useState(false);
@@ -37,6 +43,13 @@ export default function Sidebar() {
   const [showBillingDrawer, setShowBillingDrawer] = useState(false);
   const [showProfileModal, setShowProfileModal] = useState(false);
   const [showSettingsModal, setShowSettingsModal] = useState(false);
+
+  // Sync collapsed state changes to localStorage
+  useEffect(() => {
+    try {
+      localStorage.setItem("sidebar_collapsed", String(collapsed));
+    } catch (_) {}
+  }, [collapsed]);
 
   // Inline editing state
   const [editingId, setEditingId] = useState(null);
