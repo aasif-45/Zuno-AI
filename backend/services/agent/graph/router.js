@@ -63,6 +63,16 @@ export const router = async (state) => {
       return { ...state, agent: "pdf" };
     }
 
+    // Fast-Path Direct Route for Coding & Game / App / Web Projects
+    if (
+      /\b(make|build|create|generate|write|develop|code|implement|design)\s+(a\s+|an\s+)?(game|app|website|web app|calculator|clone|dashboard|landing page|todo|portfolio|component|tool|form|timer|tracker|quiz|widget)\b/i.test(lowerPrompt) ||
+      /\b(coin toss|tic tac toe|snake game|pong|rock paper scissors|blackjack|memory game|flappy bird|wordle|hangman|sudoku|card game|roulette)\b/i.test(lowerPrompt) ||
+      /\b(html|css|javascript|react|vue|node|python script|c\+\+|java code|dsa|binary search|sorting algorithm)\b/i.test(lowerPrompt)
+    ) {
+      console.log(`⚡ [Agent Router] Fast-Path Direct Route: "Auto -> coding" for query: "${rawPrompt.slice(0, 50)}..."`);
+      return { ...state, agent: "coding" };
+    }
+
     // Strict Image Generation Regex (prevents false matches on "generalized", "regenerate", "drawing conclusions", etc.)
     const isImageGenIntent =
       /\b(generate|create|render|draw|make|paint)\s+(an?\s+)?(image|picture|photo|illustration|logo|wallpaper|drawing|artwork|portrait|banner|avatar)\b/i.test(lowerPrompt) ||
