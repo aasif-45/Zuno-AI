@@ -13,6 +13,8 @@ import {
 } from "lucide-react";
 import AccountMenu from "./AccountMenu";
 import BillingDrawer from "./BillingDrawer.jsx";
+import ProfileModal from "./ProfileModal.jsx";
+import SettingsModal from "./SettingsModal.jsx";
 import AnimatedTitle from "./AnimatedTitle.jsx";
 import { getConversations } from "../features/getConversation";
 import { deleteConversationApi } from "../features/deleteConversation";
@@ -33,6 +35,8 @@ export default function Sidebar() {
   const [showSearch, setShowSearch] = useState(false);
   const [showAccountMenu, setShowAccountMenu] = useState(false);
   const [showBillingDrawer, setShowBillingDrawer] = useState(false);
+  const [showProfileModal, setShowProfileModal] = useState(false);
+  const [showSettingsModal, setShowSettingsModal] = useState(false);
 
   // Inline editing state
   const [editingId, setEditingId] = useState(null);
@@ -374,6 +378,8 @@ export default function Sidebar() {
               isOpen={showAccountMenu}
               onClose={() => setShowAccountMenu(false)}
               onUpgrade={() => setShowBillingDrawer(true)}
+              onProfile={() => setShowProfileModal(true)}
+              onSettings={() => setShowSettingsModal(true)}
               className="bottom-14 left-2"
             />
 
@@ -484,6 +490,8 @@ export default function Sidebar() {
               isOpen={showAccountMenu}
               onClose={() => setShowAccountMenu(false)}
               onUpgrade={() => setShowBillingDrawer(true)}
+              onProfile={() => setShowProfileModal(true)}
+              onSettings={() => setShowSettingsModal(true)}
               className="left-12 bottom-0"
             />
             <div className="flex h-8 w-8 items-center justify-center overflow-hidden rounded-full bg-[#10a37f] text-white font-semibold text-xs">
@@ -506,6 +514,19 @@ export default function Sidebar() {
       <BillingDrawer
         open={showBillingDrawer}
         onClose={() => setShowBillingDrawer(false)}
+      />
+
+      {/* Profile Modal */}
+      <ProfileModal
+        isOpen={showProfileModal}
+        onClose={() => setShowProfileModal(false)}
+        onUpgrade={() => setShowBillingDrawer(true)}
+      />
+
+      {/* Settings Modal */}
+      <SettingsModal
+        isOpen={showSettingsModal}
+        onClose={() => setShowSettingsModal(false)}
       />
     </aside>
   );
