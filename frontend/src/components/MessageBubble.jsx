@@ -192,11 +192,11 @@ export default function MessageBubble({
     setTimeout(() => setCopiedCodeStr(null), 2000);
   };
 
-  // Specialized ChatGPT-style Monochrome Loading Animations
+  // Authentic ChatGPT-style Loading Animations
   if (isLoading) {
     const type = isImageLoading ? "image" : loadingType;
 
-    // 1. PDF / Document Loading (ChatGPT Style)
+    // 1. PDF / Document Generation (ChatGPT Style)
     if (type === "pdf") {
       return (
         <motion.div
@@ -204,35 +204,25 @@ export default function MessageBubble({
           animate={{ opacity: 1, y: 0 }}
           className="flex w-full justify-start my-3 select-none"
         >
-          <div className="max-w-md w-full bg-[#262626] border border-white/10 rounded-2xl p-4 shadow-lg">
-            <div className="flex items-center gap-3 mb-3">
-              <div className="w-8 h-8 rounded-lg bg-white/5 border border-white/10 flex items-center justify-center text-slate-300">
-                <FileText size={16} className="animate-pulse" />
+          <div className="max-w-md w-full bg-[#282828] border border-white/[0.08] rounded-2xl p-4 shadow-lg relative overflow-hidden">
+            <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/[0.04] to-transparent animate-shimmer pointer-events-none" />
+            <div className="relative z-10">
+              <div className="flex items-center gap-2 mb-3 text-xs font-medium text-slate-300">
+                <Loader2 size={14} className="text-slate-400 animate-spin shrink-0" />
+                <span>Generating document...</span>
               </div>
-              <div className="flex-1 min-w-0">
-                <div className="flex items-center gap-2">
-                  <span className="text-xs font-medium text-slate-200">PDF Document</span>
-                  <span className="text-[10px] bg-white/10 text-slate-300 font-medium px-2 py-0.5 rounded-full">
-                    Compiling
-                  </span>
-                </div>
-                <p className="text-[11px] text-slate-400 mt-0.5 animate-pulse truncate">
-                  Formatting document layout & generating PDF...
-                </p>
+              <div className="space-y-2 p-3 bg-black/20 rounded-xl border border-white/5">
+                <div className="h-2.5 bg-white/10 rounded-full w-3/4 animate-pulse" />
+                <div className="h-2 bg-white/5 rounded-full w-full animate-pulse [animation-delay:0.15s]" />
+                <div className="h-2 bg-white/5 rounded-full w-4/5 animate-pulse [animation-delay:0.3s]" />
               </div>
-            </div>
-            {/* Shimmering PDF page lines */}
-            <div className="space-y-2 p-3 bg-black/20 rounded-xl border border-white/5">
-              <div className="h-2.5 bg-white/10 rounded-full w-3/4 animate-pulse" />
-              <div className="h-2 bg-white/5 rounded-full w-full animate-pulse [animation-delay:0.15s]" />
-              <div className="h-2 bg-white/5 rounded-full w-4/5 animate-pulse [animation-delay:0.3s]" />
             </div>
           </div>
         </motion.div>
       );
     }
 
-    // 2. PPT Presentation Loading (ChatGPT Style)
+    // 2. PPT Presentation Generation (ChatGPT Style)
     if (type === "ppt") {
       return (
         <motion.div
@@ -240,35 +230,25 @@ export default function MessageBubble({
           animate={{ opacity: 1, y: 0 }}
           className="flex w-full justify-start my-3 select-none"
         >
-          <div className="max-w-md w-full bg-[#262626] border border-white/10 rounded-2xl p-4 shadow-lg">
-            <div className="flex items-center gap-3 mb-3">
-              <div className="w-8 h-8 rounded-lg bg-white/5 border border-white/10 flex items-center justify-center text-slate-300">
-                <Presentation size={16} className="animate-pulse" />
+          <div className="max-w-md w-full bg-[#282828] border border-white/[0.08] rounded-2xl p-4 shadow-lg relative overflow-hidden">
+            <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/[0.04] to-transparent animate-shimmer pointer-events-none" />
+            <div className="relative z-10">
+              <div className="flex items-center gap-2 mb-3 text-xs font-medium text-slate-300">
+                <Loader2 size={14} className="text-slate-400 animate-spin shrink-0" />
+                <span>Designing presentation...</span>
               </div>
-              <div className="flex-1 min-w-0">
-                <div className="flex items-center gap-2">
-                  <span className="text-xs font-medium text-slate-200">Presentation</span>
-                  <span className="text-[10px] bg-white/10 text-slate-300 font-medium px-2 py-0.5 rounded-full">
-                    Designing Slides
-                  </span>
-                </div>
-                <p className="text-[11px] text-slate-400 mt-0.5 animate-pulse truncate">
-                  Structuring presentation content & layouts...
-                </p>
+              <div className="grid grid-cols-3 gap-2 p-2 bg-black/20 rounded-xl border border-white/5">
+                <div className="aspect-[4/3] bg-white/10 rounded-lg animate-pulse" />
+                <div className="aspect-[4/3] bg-white/5 rounded-lg animate-pulse [animation-delay:0.15s]" />
+                <div className="aspect-[4/3] bg-white/5 rounded-lg animate-pulse [animation-delay:0.3s]" />
               </div>
-            </div>
-            {/* Shimmering PPT slide previews */}
-            <div className="grid grid-cols-3 gap-2 p-2 bg-black/20 rounded-xl border border-white/5">
-              <div className="aspect-[4/3] bg-white/10 rounded-lg animate-pulse" />
-              <div className="aspect-[4/3] bg-white/5 rounded-lg animate-pulse [animation-delay:0.15s]" />
-              <div className="aspect-[4/3] bg-white/5 rounded-lg animate-pulse [animation-delay:0.3s]" />
             </div>
           </div>
         </motion.div>
       );
     }
 
-    // 3. Image Generation / Vision Analysis (ChatGPT DALL-E Style)
+    // 3. Image Generation / Vision Analysis (ChatGPT DALL·E Style)
     if (type === "image" || type === "imageAnalyzer") {
       return (
         <motion.div
@@ -279,22 +259,17 @@ export default function MessageBubble({
           <div className="max-w-lg w-full">
             {/* ChatGPT Header */}
             <div className="flex items-center gap-2 mb-2 text-xs font-medium text-slate-300">
-              <svg className="w-3.5 h-3.5 text-slate-400 animate-spin shrink-0" viewBox="0 0 16 16" fill="currentColor">
-                <circle cx="8" cy="2.5" r="1.5" />
-                <circle cx="13.5" cy="8" r="1.5" />
-                <circle cx="8" cy="13.5" r="1.5" />
-                <circle cx="2.5" cy="8" r="1.5" />
-              </svg>
-              <span className="animate-pulse">
+              <Loader2 size={14} className="text-slate-400 animate-spin shrink-0" />
+              <span>
                 {type === "imageAnalyzer" ? "Analyzing image..." : "Creating image..."}
               </span>
             </div>
 
-            {/* ChatGPT Minimal Dark Skeleton Box */}
-            <div className="w-full aspect-[16/11] sm:aspect-[4/3] bg-[#282828] border border-white/10 rounded-2xl overflow-hidden relative shadow-lg flex items-center justify-center">
-              <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/[0.03] to-transparent animate-pulse" />
-              <div className="flex flex-col items-center gap-2 text-slate-500">
-                <ImageIcon size={22} className="opacity-40 animate-pulse" />
+            {/* ChatGPT Minimal Dark Shimmer Canvas */}
+            <div className="w-full aspect-[16/11] sm:aspect-[4/3] bg-[#282828] border border-white/[0.08] rounded-2xl overflow-hidden relative shadow-lg flex items-center justify-center">
+              <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/[0.04] to-transparent animate-shimmer pointer-events-none" />
+              <div className="flex flex-col items-center gap-2 text-slate-500 z-10">
+                <ImageIcon size={26} className="opacity-25" />
               </div>
             </div>
           </div>
@@ -310,34 +285,25 @@ export default function MessageBubble({
           animate={{ opacity: 1, y: 0 }}
           className="flex w-full justify-start my-3 select-none"
         >
-          <div className="max-w-md w-full bg-[#262626] border border-white/10 rounded-2xl p-4 shadow-lg">
-            <div className="flex items-center gap-3 mb-3">
-              <div className="w-8 h-8 rounded-lg bg-white/5 border border-white/10 flex items-center justify-center text-slate-300">
-                <Code2 size={16} className="animate-pulse" />
+          <div className="max-w-md w-full bg-[#282828] border border-white/[0.08] rounded-2xl p-4 shadow-lg relative overflow-hidden">
+            <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/[0.04] to-transparent animate-shimmer pointer-events-none" />
+            <div className="relative z-10">
+              <div className="flex items-center gap-2 mb-3 text-xs font-medium text-slate-300">
+                <Loader2 size={14} className="text-slate-400 animate-spin shrink-0" />
+                <span>Writing code...</span>
               </div>
-              <div className="flex-1 min-w-0">
-                <div className="flex items-center gap-2">
-                  <span className="text-xs font-medium text-slate-200">Code Agent</span>
-                  <span className="text-[10px] bg-white/10 text-slate-300 font-medium px-2 py-0.5 rounded-full">
-                    Generating Code
-                  </span>
-                </div>
-                <p className="text-[11px] text-slate-400 mt-0.5 animate-pulse truncate">
-                  Writing clean syntax & logic...
-                </p>
+              <div className="space-y-1.5 p-3 bg-black/30 rounded-xl border border-white/5 font-mono text-[11px]">
+                <div className="h-2 bg-white/15 rounded w-1/3 animate-pulse" />
+                <div className="h-2 bg-white/5 rounded w-4/5 animate-pulse [animation-delay:0.1s]" />
+                <div className="h-2 bg-white/5 rounded w-2/3 animate-pulse [animation-delay:0.2s]" />
               </div>
-            </div>
-            <div className="space-y-1.5 p-2.5 bg-black/30 rounded-xl border border-white/5 font-mono text-[11px]">
-              <div className="h-2 bg-white/15 rounded w-1/3 animate-pulse" />
-              <div className="h-2 bg-white/5 rounded w-4/5 animate-pulse [animation-delay:0.1s]" />
-              <div className="h-2 bg-white/5 rounded w-2/3 animate-pulse [animation-delay:0.2s]" />
             </div>
           </div>
         </motion.div>
       );
     }
 
-    // 5. Search (ChatGPT Style)
+    // 5. Web Search (ChatGPT Style)
     if (type === "search") {
       return (
         <motion.div
@@ -345,20 +311,18 @@ export default function MessageBubble({
           animate={{ opacity: 1, y: 0 }}
           className="flex w-full justify-start my-3 select-none"
         >
-          <div className="max-w-md w-full bg-[#262626] border border-white/10 rounded-2xl p-3.5 shadow-lg flex items-center gap-3">
-            <div className="w-8 h-8 rounded-lg bg-white/5 border border-white/10 flex items-center justify-center text-slate-300">
-              <Globe size={16} className="animate-spin [animation-duration:3s]" />
-            </div>
-            <div className="flex-1 min-w-0">
-              <div className="flex items-center gap-2">
-                <span className="text-xs font-medium text-slate-200">Web Search</span>
-                <span className="text-[10px] bg-white/10 text-slate-300 font-medium px-2 py-0.5 rounded-full">
-                  Searching
-                </span>
+          <div className="max-w-md w-full bg-[#282828] border border-white/[0.08] rounded-2xl p-3.5 shadow-lg relative overflow-hidden">
+            <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/[0.04] to-transparent animate-shimmer pointer-events-none" />
+            <div className="relative z-10 flex items-center gap-3">
+              <div className="w-8 h-8 rounded-lg bg-white/5 border border-white/10 flex items-center justify-center text-slate-300">
+                <Globe size={15} className="animate-spin [animation-duration:3s]" />
               </div>
-              <p className="text-[11px] text-slate-400 mt-0.5 animate-pulse truncate">
-                Querying live web sources...
-              </p>
+              <div className="flex-1 min-w-0">
+                <span className="text-xs font-medium text-slate-200">Searching web...</span>
+                <p className="text-[11px] text-slate-400 mt-0.5 truncate">
+                  Gathering live facts & references
+                </p>
+              </div>
             </div>
           </div>
         </motion.div>
@@ -368,13 +332,13 @@ export default function MessageBubble({
     // 6. Default Chat (Clean ChatGPT 3-Dot Bounce)
     return (
       <div className="flex w-full justify-start my-3 select-none">
-        <div className="flex items-center gap-2 py-2 px-3 bg-[#262626] border border-white/10 rounded-2xl">
+        <div className="flex items-center gap-2 py-2 px-3 bg-[#282828] border border-white/[0.08] rounded-2xl">
           <div className="flex items-center gap-1.5">
             <div className="h-2 w-2 rounded-full bg-slate-300 animate-bounce [animation-delay:-0.32s]" />
             <div className="h-2 w-2 rounded-full bg-slate-300 animate-bounce [animation-delay:-0.16s]" />
             <div className="h-2 w-2 rounded-full bg-slate-300 animate-bounce" />
           </div>
-          <span className="text-xs font-medium text-slate-400 animate-pulse">Thinking...</span>
+          <span className="text-xs font-medium text-slate-400">Thinking...</span>
         </div>
       </div>
     );
