@@ -4,6 +4,7 @@ import {
   ArrowUp,
   Paperclip,
   Mic,
+  MicOff,
   Zap,
   MessageSquare,
   Globe,
@@ -93,13 +94,28 @@ export default function ChatInput() {
   const [selectedAgent, setSelectedAgent] = useState("auto");
   const [agentMenuOpen, setAgentMenuOpen] = useState(false);
   const [attachedFile, setAttachedFile] = useState(null);
+  const [isListening, setIsListening] = useState(false);
+  const [speechError, setSpeechError] = useState(null);
 
   const textareaRef = useRef(null);
   const menuRef = useRef(null);
   const fileInputRef = useRef(null);
+  const recognitionRef = useRef(null);
+  const baseMessageRef = useRef("");
 
   const currentAgent = AGENTS.find((a) => a.id === selectedAgent) || AGENTS[0];
   const CurrentAgentIcon = currentAgent.icon;
+
+  // Cleanup speech recognition on unmount
+  useEffect(() => {
+    return () => {
+      if (recognitionRef.current) {
+        try {
+          recognitionRef.current.abort();
+        } catch (_) {}
+      }
+    };
+  }, []);
 
   // Reset agent mode selector to "auto" whenever starting a new chat or switching conversations
   useEffect(() => {
@@ -121,27 +137,125 @@ export default function ChatInput() {
     };
   }, [agentMenuOpen]);
 
-  const handleChange = (e) => {
-    const value = e.target.value;
-    setMessage(value);
-
+  const adjustTextareaHeight = () => {
     const textarea = textareaRef.current;
     if (!textarea) return;
-
     textarea.style.height = "0px";
     textarea.style.height = `${Math.min(textarea.scrollHeight, 180)}px`;
   };
 
+  const handleChange = (e) => {
+    const value = e.target.value;
+    setMessage(value);
+    requestAnimationFrame(adjustTextareaHeight);
+  };
+
   const resetTextarea = () => {
     setMessage("");
-
     if (textareaRef.current) {
       textareaRef.current.style.height = "28px";
     }
   };
 
+  const startListening = () => {
+    const SpeechRecognition =
+      window.SpeechRecognition || window.webkitSpeechRecognition;
+
+    if (!SpeechRecognition) {
+      alert(
+        "Speech recognition is not supported in this browser. Please try Google Chrome, Microsoft Edge, or Safari."
+      );
+      return;
+    }
+
+    try {
+      if (recognitionRef.current) {
+        try {
+          recognitionRef.current.abort();
+        } catch (_) {}
+      }
+
+      const recognition = new SpeechRecognition();
+      recognition.continuous = true;
+      recognition.interimResults = true;
+      recognition.lang = navigator.language || "en-US";
+
+      baseMessageRef.current = message ? message.trim() + " " : "";
+
+      recognition.onstart = () => {
+        setIsListening(true);
+        setSpeechError(null);
+      };
+
+      recognition.onresult = (event) => {
+        let interimTranscript = "";
+        let finalTranscript = "";
+
+        for (let i = event.resultIndex; i < event.results.length; ++i) {
+          const transcriptChunk = event.results[i][0].transcript;
+          if (event.results[i].isFinal) {
+            finalTranscript += transcriptChunk;
+          } else {
+            interimTranscript += transcriptChunk;
+          }
+        }
+
+        const combined = `${baseMessageRef.current}${finalTranscript}${interimTranscript}`;
+        setMessage(combined);
+
+        if (finalTranscript) {
+          baseMessageRef.current = `${baseMessageRef.current}${finalTranscript} `;
+        }
+
+        requestAnimationFrame(adjustTextareaHeight);
+      };
+
+      recognition.onerror = (event) => {
+        console.warn("Speech recognition error:", event.error);
+        if (event.error === "not-allowed" || event.error === "service-not-allowed") {
+          setSpeechError("Microphone access denied. Please grant microphone permissions in your browser.");
+          setTimeout(() => setSpeechError(null), 5000);
+        } else if (event.error !== "no-speech") {
+          setSpeechError(`Speech recognition: ${event.error}`);
+          setTimeout(() => setSpeechError(null), 4000);
+        }
+        setIsListening(false);
+      };
+
+      recognition.onend = () => {
+        setIsListening(false);
+      };
+
+      recognitionRef.current = recognition;
+      recognition.start();
+    } catch (err) {
+      console.error("Failed to start speech recognition:", err);
+      setIsListening(false);
+    }
+  };
+
+  const stopListening = () => {
+    if (recognitionRef.current) {
+      try {
+        recognitionRef.current.stop();
+      } catch (_) {}
+    }
+    setIsListening(false);
+  };
+
+  const toggleListening = () => {
+    if (isListening) {
+      stopListening();
+    } else {
+      startListening();
+    }
+  };
+
   const handleSubmit = async (e) => {
     if (e) e.preventDefault();
+    if (isListening) {
+      stopListening();
+    }
     const promptText = message.trim();
     const fileToSend = attachedFile;
 
@@ -271,11 +385,58 @@ export default function ChatInput() {
     }
   };
 
-
   return (
     <div className="px-3 sm:px-6 pb-2.5 sm:pb-5">
       <form onSubmit={handleSubmit} className="mx-auto max-w-4xl">
         <div className="rounded-[22px] sm:rounded-[28px] border border-white/10 bg-[#2f2f2f] px-3.5 sm:px-5 py-2.5 sm:py-4 shadow-xl">
+          {/* Active Speech Recognition Banner */}
+          <AnimatePresence>
+            {isListening && (
+              <motion.div
+                initial={{ opacity: 0, height: 0 }}
+                animate={{ opacity: 1, height: "auto" }}
+                exit={{ opacity: 0, height: 0 }}
+                className="mb-2.5 flex items-center justify-between rounded-xl bg-red-500/10 border border-red-500/20 px-3 py-1.5 text-xs text-red-300 select-none overflow-hidden"
+              >
+                <div className="flex items-center gap-2">
+                  <span className="relative flex h-2 w-2">
+                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
+                    <span className="relative inline-flex rounded-full h-2 w-2 bg-red-500"></span>
+                  </span>
+                  <span className="font-medium tracking-wide">Listening... speak into your microphone</span>
+                </div>
+                <button
+                  type="button"
+                  onClick={stopListening}
+                  className="text-[11px] font-semibold text-red-400 hover:text-white transition cursor-pointer px-1.5 py-0.5 rounded hover:bg-red-500/20"
+                >
+                  Done
+                </button>
+              </motion.div>
+            )}
+          </AnimatePresence>
+
+          {/* Speech Error Banner */}
+          <AnimatePresence>
+            {speechError && (
+              <motion.div
+                initial={{ opacity: 0, y: -4 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -4 }}
+                className="mb-2.5 flex items-center justify-between rounded-xl bg-amber-500/10 border border-amber-500/20 px-3 py-1.5 text-xs text-amber-300 select-none"
+              >
+                <span className="truncate mr-2">{speechError}</span>
+                <button
+                  type="button"
+                  onClick={() => setSpeechError(null)}
+                  className="text-amber-400 hover:text-white cursor-pointer p-0.5 rounded hover:bg-amber-500/20"
+                >
+                  <X size={13} />
+                </button>
+              </motion.div>
+            )}
+          </AnimatePresence>
+
           {/* Attached file preview chip */}
           {attachedFile && (
             <div className="mb-3 flex items-center gap-2 rounded-xl border border-white/10 bg-white/5 px-3 py-2 w-fit max-w-full">
@@ -445,12 +606,24 @@ export default function ChatInput() {
             <div className="flex items-center gap-1.5 sm:gap-2">
               <motion.button
                 type="button"
+                onClick={toggleListening}
                 whileHover={{ scale: 1.1 }}
                 whileTap={{ scale: 0.9 }}
-                className="flex h-8 w-8 sm:h-9 sm:w-9 items-center justify-center rounded-full text-gray-400 transition hover:bg-white/10 hover:text-white cursor-pointer"
-                title="Voice input"
+                className={`relative flex h-8 w-8 sm:h-9 sm:w-9 items-center justify-center rounded-full transition cursor-pointer ${
+                  isListening
+                    ? "bg-red-500/20 text-red-400 ring-2 ring-red-500/50 hover:bg-red-500/30 hover:text-red-300"
+                    : "text-gray-400 hover:bg-white/10 hover:text-white"
+                }`}
+                title={isListening ? "Stop listening" : "Voice input (Speech recognition)"}
               >
-                <Mic size={17} />
+                {isListening ? (
+                  <>
+                    <span className="absolute inset-0 rounded-full bg-red-500/30 animate-ping" />
+                    <MicOff size={17} className="relative z-10" />
+                  </>
+                ) : (
+                  <Mic size={17} />
+                )}
               </motion.button>
 
               <motion.button
