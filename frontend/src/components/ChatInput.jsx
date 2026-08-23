@@ -32,7 +32,6 @@ import {
   setLoading,
 } from "../redux/messageSlice";
 
-
 const AGENTS = [
   {
     id: "auto",
@@ -157,7 +156,7 @@ export default function ChatInput() {
     }
   };
 
-  const startListening = () => {
+  const startListening = async () => {
     const SpeechRecognition =
       window.SpeechRecognition || window.webkitSpeechRecognition;
 
@@ -166,6 +165,31 @@ export default function ChatInput() {
         "Speech recognition is not supported in this browser. Please try Google Chrome, Microsoft Edge, or Safari."
       );
       return;
+    }
+
+    // Explicitly request microphone permission to trigger browser prompt if not already granted
+    if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
+      try {
+        const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+        stream.getTracks().forEach((track) => track.stop());
+      } catch (mediaErr) {
+        console.warn("Microphone permission error:", mediaErr);
+        if (
+          window.location.protocol !== "https:" &&
+          window.location.hostname !== "localhost" &&
+          window.location.hostname !== "127.0.0.1"
+        ) {
+          setSpeechError(
+            "Microphone access requires HTTPS or localhost. Click 🔒 next to the URL or allow microphone in browser settings."
+          );
+        } else {
+          setSpeechError(
+            "Microphone access denied. Click the 🔒/tune icon in your browser address bar and set Microphone to 'Allow'."
+          );
+        }
+        setTimeout(() => setSpeechError(null), 7000);
+        return;
+      }
     }
 
     try {
@@ -213,8 +237,10 @@ export default function ChatInput() {
       recognition.onerror = (event) => {
         console.warn("Speech recognition error:", event.error);
         if (event.error === "not-allowed" || event.error === "service-not-allowed") {
-          setSpeechError("Microphone access denied. Please grant microphone permissions in your browser.");
-          setTimeout(() => setSpeechError(null), 5000);
+          setSpeechError(
+            "Microphone access denied. Click the 🔒/tune icon next to the address bar and set Microphone to 'Allow'."
+          );
+          setTimeout(() => setSpeechError(null), 6000);
         } else if (event.error !== "no-speech") {
           setSpeechError(`Speech recognition: ${event.error}`);
           setTimeout(() => setSpeechError(null), 4000);
