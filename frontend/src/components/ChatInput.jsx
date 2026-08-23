@@ -15,6 +15,8 @@ import {
   ChevronDown,
   Check,
   X,
+  Volume2,
+  Shield,
 } from "lucide-react";
 import { useDispatch, useSelector } from "react-redux";
 import { getCurrentuser } from "../features/getCurrentUser";
@@ -95,6 +97,14 @@ export default function ChatInput() {
   const [attachedFile, setAttachedFile] = useState(null);
   const [isListening, setIsListening] = useState(false);
   const [speechError, setSpeechError] = useState(null);
+  const [showPermissionModal, setShowPermissionModal] = useState(false);
+  const [hasVoicePermission, setHasVoicePermission] = useState(() => {
+    try {
+      return localStorage.getItem("voice_input_allowed") === "true";
+    } catch (_) {
+      return false;
+    }
+  });
 
   const textareaRef = useRef(null);
   const menuRef = useRef(null);
@@ -180,14 +190,14 @@ export default function ChatInput() {
           window.location.hostname !== "127.0.0.1"
         ) {
           setSpeechError(
-            "Microphone access requires HTTPS or localhost. Click 🔒 next to the URL or allow microphone in browser settings."
+            "Microphone access blocked. Please click 🔒 / tune icon in address bar -> Site settings -> Set Microphone to 'Allow'."
           );
         } else {
           setSpeechError(
             "Microphone access denied. Click the 🔒/tune icon in your browser address bar and set Microphone to 'Allow'."
           );
         }
-        setTimeout(() => setSpeechError(null), 7000);
+        setTimeout(() => setSpeechError(null), 8000);
         return;
       }
     }
@@ -238,9 +248,9 @@ export default function ChatInput() {
         console.warn("Speech recognition error:", event.error);
         if (event.error === "not-allowed" || event.error === "service-not-allowed") {
           setSpeechError(
-            "Microphone access denied. Click the 🔒/tune icon next to the address bar and set Microphone to 'Allow'."
+            "Microphone access denied. Click the 🔒/tune icon in the address bar and set Microphone to 'Allow'."
           );
-          setTimeout(() => setSpeechError(null), 6000);
+          setTimeout(() => setSpeechError(null), 7000);
         } else if (event.error !== "no-speech") {
           setSpeechError(`Speech recognition: ${event.error}`);
           setTimeout(() => setSpeechError(null), 4000);
@@ -269,12 +279,23 @@ export default function ChatInput() {
     setIsListening(false);
   };
 
-  const toggleListening = () => {
+  const handleMicClick = () => {
     if (isListening) {
       stopListening();
-    } else {
+    } else if (hasVoicePermission) {
       startListening();
+    } else {
+      setShowPermissionModal(true);
     }
+  };
+
+  const handleAllowPermission = () => {
+    try {
+      localStorage.setItem("voice_input_allowed", "true");
+    } catch (_) {}
+    setHasVoicePermission(true);
+    setShowPermissionModal(false);
+    startListening();
   };
 
   const handleSubmit = async (e) => {
@@ -413,6 +434,87 @@ export default function ChatInput() {
 
   return (
     <div className="px-3 sm:px-6 pb-2.5 sm:pb-5">
+      {/* Microphone Permission Modal Popup */}
+      <AnimatePresence>
+        {showPermissionModal && (
+          <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
+            {/* Backdrop */}
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={() => setShowPermissionModal(false)}
+              className="absolute inset-0 bg-black/75 backdrop-blur-sm"
+            />
+
+            {/* Modal Card */}
+            <motion.div
+              initial={{ scale: 0.95, opacity: 0, y: 16 }}
+              animate={{ scale: 1, opacity: 1, y: 0 }}
+              exit={{ scale: 0.95, opacity: 0, y: 16 }}
+              transition={{ type: "spring", duration: 0.3 }}
+              className="relative w-full max-w-md rounded-2xl border border-white/10 bg-[#252525] p-5 sm:p-6 shadow-2xl z-10 text-white select-none"
+            >
+              {/* Close Button */}
+              <button
+                type="button"
+                onClick={() => setShowPermissionModal(false)}
+                className="absolute top-4 right-4 text-gray-400 hover:text-white transition p-1 rounded-full hover:bg-white/10 cursor-pointer"
+              >
+                <X size={18} />
+              </button>
+
+              {/* Icon & Title */}
+              <div className="flex items-center gap-3.5 mb-4">
+                <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-gradient-to-tr from-emerald-500/20 to-cyan-500/20 border border-emerald-500/30 text-emerald-400 shadow-inner">
+                  <Mic size={24} />
+                </div>
+                <div>
+                  <h3 className="text-base sm:text-lg font-semibold text-white">
+                    Allow Microphone Access?
+                  </h3>
+                  <p className="text-xs text-gray-400">
+                    Enable voice input and speech recognition
+                  </p>
+                </div>
+              </div>
+
+              {/* Description */}
+              <div className="space-y-3 text-xs sm:text-sm text-gray-300 mb-5 leading-relaxed">
+                <p>
+                  MY-AI uses your microphone to transcribe your voice directly into text in real time so you can speak your prompts effortlessly.
+                </p>
+                <div className="rounded-xl bg-white/[0.04] border border-white/5 p-3 flex items-start gap-2.5 text-xs text-gray-400">
+                  <Shield size={16} className="text-emerald-400 shrink-0 mt-0.5" />
+                  <span>
+                    Audio is processed directly in your browser using the standard Web Speech API. Audio is not saved or shared.
+                  </span>
+                </div>
+              </div>
+
+              {/* Action Buttons */}
+              <div className="flex items-center justify-end gap-2.5">
+                <button
+                  type="button"
+                  onClick={() => setShowPermissionModal(false)}
+                  className="px-4 py-2 text-xs sm:text-sm font-medium text-gray-300 hover:text-white hover:bg-white/10 rounded-xl transition cursor-pointer"
+                >
+                  Don't Allow
+                </button>
+                <button
+                  type="button"
+                  onClick={handleAllowPermission}
+                  className="flex items-center gap-1.5 px-4 py-2 text-xs sm:text-sm font-semibold text-black bg-white hover:bg-gray-200 rounded-xl transition shadow-md cursor-pointer"
+                >
+                  <Check size={16} />
+                  <span>Allow Microphone</span>
+                </button>
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
+
       <form onSubmit={handleSubmit} className="mx-auto max-w-4xl">
         <div className="rounded-[22px] sm:rounded-[28px] border border-white/10 bg-[#2f2f2f] px-3.5 sm:px-5 py-2.5 sm:py-4 shadow-xl">
           {/* Active Speech Recognition Banner */}
@@ -632,7 +734,7 @@ export default function ChatInput() {
             <div className="flex items-center gap-1.5 sm:gap-2">
               <motion.button
                 type="button"
-                onClick={toggleListening}
+                onClick={handleMicClick}
                 whileHover={{ scale: 1.1 }}
                 whileTap={{ scale: 0.9 }}
                 className={`relative flex h-8 w-8 sm:h-9 sm:w-9 items-center justify-center rounded-full transition cursor-pointer ${
