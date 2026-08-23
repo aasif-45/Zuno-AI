@@ -11,6 +11,7 @@ env:
   ACCOUNT_ID: ${{ secrets.AWS_ACCOUNT_ID }}
   ECS_CLUSTER: backend
   S3_BUCKET: myai-demo1
+  CLOUDFRONT_DISTRIBUTION_ID: ED6NUYKT6EJ1M
 
 jobs:
   # ============================================================
