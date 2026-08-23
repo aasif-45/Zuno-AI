@@ -12,10 +12,24 @@ const port = process.env.PORT || 3000;
 
 const app = express();
 
+const allowedOrigins = [
+  process.env.FRONTEND_URL,
+  "https://d2w8b5ky2np1tx.cloudfront.net",
+  "http://myai-demo1.s3-website.ap-south-1.amazonaws.com",
+  "http://localhost:5173",
+  "http://localhost:3000",
+].filter(Boolean);
+
 app.use(cors({
-  origin: process.env.FRONTEND_URL,
+  origin: (origin, callback) => {
+    if (!origin || allowedOrigins.includes(origin) || origin.endsWith(".cloudfront.net")) {
+      callback(null, true);
+    } else {
+      callback(null, true); // Allow all for public AI gateway
+    }
+  },
   credentials: true,
-}))
+}));
 
 app.use(morgan("dev"));
 app.use(cookieParser());

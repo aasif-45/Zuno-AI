@@ -5,12 +5,18 @@ const isDeployed =
   window.location.hostname !== "localhost" &&
   window.location.hostname !== "127.0.0.1";
 
-const defaultUrl = isDeployed
+const isCloudFrontOrHttps =
+  typeof window !== "undefined" &&
+  (window.location.hostname.includes("cloudfront.net") || window.location.protocol === "https:");
+
+const defaultUrl = isCloudFrontOrHttps
+  ? ""
+  : isDeployed
   ? "http://my-ai-alb-1538174081.ap-south-1.elb.amazonaws.com"
   : "http://localhost:3000";
 
-let rawUrl = import.meta.env.VITE_SERVER_URL || defaultUrl;
-if (isDeployed && (rawUrl.includes("localhost") || rawUrl.includes("127.0.0.1"))) {
+let rawUrl = isCloudFrontOrHttps ? "" : (import.meta.env.VITE_SERVER_URL || defaultUrl);
+if (!isCloudFrontOrHttps && isDeployed && (rawUrl.includes("localhost") || rawUrl.includes("127.0.0.1"))) {
   rawUrl = "http://my-ai-alb-1538174081.ap-south-1.elb.amazonaws.com";
 }
 
