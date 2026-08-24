@@ -44,7 +44,7 @@ const sanitizeResult = (res) => {
   return res;
 };
 
-export const getGroq = (modelName = "llama-3.3-70b-versatile") => {
+export const getGroq = (modelName = "openai/gpt-oss-120b") => {
   return new ChatGroq({
     apiKey: process.env.GROQ_API_KEY || "",
     model: modelName,
@@ -140,11 +140,11 @@ export const getModel = async (type = "chat") => {
   switch (type) {
     case "coding":
       // Primary: OpenRouter DeepSeek V4 Flash -> Nemotron 3 Ultra -> LangChain Groq
-      return getOpenRouterDeepSeekV4() || getOpenRouterNemotron3Ultra() || getGroq("llama-3.3-70b-versatile");
+      return getOpenRouterDeepSeekV4() || getOpenRouterNemotron3Ultra() || getGroq("openai/gpt-oss-120b");
 
     case "router":
       // Primary: OpenRouter DeepSeek V4 Flash -> Groq
-      return getOpenRouterDeepSeekV4() || getGroq("llama-3.3-70b-versatile");
+      return getOpenRouterDeepSeekV4() || getGroq("openai/gpt-oss-120b");
 
     case "imageAnalyzer":
     case "pdfRag":
@@ -156,7 +156,7 @@ export const getModel = async (type = "chat") => {
     case "search":
     case "chat":
     default:
-      return getGroq("llama-3.3-70b-versatile") || getGemini("gemini-3.6-flash");
+      return getGroq("openai/gpt-oss-120b") || getGemini("gemini-3.6-flash");
   }
 };
 
@@ -219,7 +219,7 @@ export const invokeModelWithFallback = async (model, input) => {
   // Fallback Tier 3: LangChain Groq Model
   try {
     console.log("🔄 [AI Agent Pipeline] Fallback Tier 3: Executing LangChain Groq model...");
-    const groqModel = getGroq("llama-3.3-70b-versatile");
+    const groqModel = getGroq("openai/gpt-oss-120b");
     if (groqModel) {
       const res = await invokeWithTimeout(groqModel, 65000);
       console.log("✅ [AI Agent Pipeline] LangChain Groq model succeeded!");
