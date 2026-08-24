@@ -1,4 +1,4 @@
-name: Deploy Cortex AI to AWS
+name: Deploy Zuno AI to AWS
 
 on:
   push:
