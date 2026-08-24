@@ -299,10 +299,20 @@ export const buildCleanLLMMessages = (systemPrompt, history = [], currentPrompt 
         msg.content.trim().length > 0 &&
         !msg.content.includes("I encountered an issue")
     )
-    .map((msg) => ({
-      role: msg.role === "assistant" ? "assistant" : "user",
-      content: cleanMathDollarSigns(msg.content.trim()),
-    }));
+    .map((msg) => {
+      let content = msg.content.trim();
+      if (msg.role === "assistant") {
+        content = content
+          .replace(/\bMY AI\b/gi, "Zuno-AI")
+          .replace(/\bMY-AI\b/gi, "Zuno-AI")
+          .replace(/\bMY_AI\b/gi, "Zuno-AI")
+          .replace(/\bZuno AI\b/g, "Zuno-AI");
+      }
+      return {
+        role: msg.role === "assistant" ? "assistant" : "user",
+        content: cleanMathDollarSigns(content),
+      };
+    });
 
   if (currentPrompt && currentPrompt.trim()) {
     const trimmed = cleanMathDollarSigns(currentPrompt.trim());
