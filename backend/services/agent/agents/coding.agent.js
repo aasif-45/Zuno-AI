@@ -130,35 +130,23 @@ Rules:
     // ---------------------------
     if (intent === "project_generation") {
       const generationPrompt = `
-Generate a full, working multi-file web application artifact for: "${rawPrompt}".
+Generate a complete, modern, fully-functional multi-file web application for: "${rawPrompt}".
 
-Default stack:
-- index.html (semantic HTML, modern responsive layout, links styles.css and script.js)
-- styles.css (modern sleek dark/light styling, clean CSS variables, smooth transitions and animations)
-- script.js (fully interactive, bug-free, complete working vanilla JavaScript)
+Files to provide:
+1. index.html - Semantic HTML5 structure, links to styles.css and script.js, modern dark layout.
+2. styles.css - Sleek modern UI design, CSS variables, glassmorphism, responsive grid, smooth animations.
+3. script.js - Bug-free vanilla JavaScript with full interactive features, event listeners, state handling, sound/visual feedback, and score/game mechanics.
 
-Requirements:
-- Sleek modern UI design with dark mode styling
-- Fully working interactive gameplay/features (e.g. if coin toss game: 3D coin flip animation, heads/tails outcome calculation, streak score counter, sound/visual feedback)
-- Return ONLY valid JSON with no markdown wrapping.
-
-Schema:
+You may output either valid JSON:
 {
   "files": [
-    {
-      "name": "index.html",
-      "content": "..."
-    },
-    {
-      "name": "styles.css",
-      "content": "..."
-    },
-    {
-      "name": "script.js",
-      "content": "..."
-    }
+    { "name": "index.html", "content": "..." },
+    { "name": "styles.css", "content": "..." },
+    { "name": "script.js", "content": "..." }
   ]
 }
+
+OR structured Markdown code blocks (e.g. \`\`\`html ... \`\`\`, \`\`\`css ... \`\`\`, \`\`\`javascript ... \`\`\`).
 `;
 
       const messages = buildCleanLLMMessages(
@@ -200,16 +188,10 @@ ${state.prompt}
 Respond in clean, well-structured GitHub Flavored Markdown.
 
 Guidelines:
-1. If the request is for a Data Structure or Algorithm (e.g. Insertion Sort, Binary Search, etc.):
-   - Explain how the algorithm works in simple, clear steps.
-   - Provide clean, efficient code implementation in the requested language (or Python, C++, Java, or JavaScript if unspecified).
-   - Use fenced code blocks with language identifiers (e.g. \`\`\`C++ ... \`\`\`).
-   - Include Time Complexity (Best, Average, Worst Case) and Space Complexity using plain Big-O notation without dollar signs (e.g. write O(n), O(1), O(2^n), n - do NOT write $O(n)$ or $n$).
-   - Provide a step-by-step example execution.
-
-2. Structure response using clear Markdown headings (# Solution, ## Algorithm Explanation, ## Code Implementation, ## Complexity Analysis).
-
-Do NOT return JSON.
+1. Explain how the solution or algorithm works clearly.
+2. Provide clean, efficient code implementation in standard fenced code blocks (e.g. \`\`\`javascript, \`\`\`html, \`\`\`python, \`\`\`cpp).
+3. If web code or game is requested, provide complete, working code in \`\`\`html, \`\`\`css, and \`\`\`javascript blocks.
+4. For algorithms, include Time and Space Complexity using plain O(n) notation without dollar signs.
 `;
 
     const messages = buildCleanLLMMessages(
@@ -219,12 +201,26 @@ Do NOT return JSON.
     );
 
     const response = await invokeModelWithFallback(llm, messages);
+    const content = response?.content || "No response generated.";
+
+    // Fallback file extraction: If the markdown output contains code blocks (HTML, CSS, JS, Python), create an artifact!
+    const fallbackFiles = extractArtifactFiles(content, rawPrompt);
+    const generatedArtifacts = fallbackFiles && fallbackFiles.length > 0
+      ? [
+          {
+            id: randomUUID(),
+            type: "project",
+            title: rawPrompt.length > 40 ? rawPrompt.slice(0, 40) + "..." : rawPrompt,
+            files: fallbackFiles,
+          },
+        ]
+      : [];
 
     return {
       ...state,
       intent,
-      aiResponse: response?.content || "No response generated.",
-      artifacts: [],
+      aiResponse: content,
+      artifacts: generatedArtifacts,
     };
   } catch (error) {
     console.error("Coding agent error:", error);

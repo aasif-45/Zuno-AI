@@ -169,13 +169,80 @@ export default function MessageBubble({
     return { cleanText: clean, allImages: extracted };
   }, [content, images]);
 
-  const hasArtifacts = Array.isArray(artifacts) && artifacts.length > 0;
+  const resolvedArtifacts = useMemo(() => {
+    if (Array.isArray(artifacts) && artifacts.length > 0) {
+      return artifacts;
+    }
+
+    // Auto-extract code blocks from cleanText into an interactive project artifact if HTML/CSS/JS/Canvas/Game is detected
+    if (cleanText && (cleanText.includes("```html") || cleanText.includes("```css") || cleanText.includes("```javascript") || cleanText.includes("```js") || cleanText.includes("<!DOCTYPE html>"))) {
+      const codeBlockRegex = /```([a-zA-Z0-9_\-\+]+)?\s*(?:\/\/\s*([\w\.\-]+)|\/\*\s*([\w\.\-]+)\s*\*\/|<!--\s*([\w\.\-]+)\s*-->)?\n([\s\S]*?)```/g;
+      const blockFiles = [];
+      let blockMatch;
+      let fileIdx = 1;
+
+      while ((blockMatch = codeBlockRegex.exec(cleanText)) !== null) {
+        const lang = (blockMatch[1] || "").toLowerCase();
+        const explicitName = blockMatch[2] || blockMatch[3] || blockMatch[4];
+        const codeContent = (blockMatch[5] || "").trim();
+
+        if (!codeContent || lang === "json") continue;
+
+        let fileName = explicitName;
+        if (!fileName) {
+          if (lang === "html" || codeContent.includes("<!DOCTYPE") || codeContent.includes("<html") || codeContent.includes("<div") || codeContent.includes("<canvas") || codeContent.includes("<body")) {
+            fileName = "index.html";
+          } else if (lang === "css" || (codeContent.includes("{") && (codeContent.includes("margin") || codeContent.includes("background") || codeContent.includes("color")) && !codeContent.includes("function"))) {
+            fileName = "styles.css";
+          } else if (lang === "javascript" || lang === "js" || lang === "ts") {
+            fileName = "script.js";
+          } else if (lang === "python" || lang === "py") {
+            fileName = "main.py";
+          } else {
+            fileName = `file_${fileIdx}.${lang || "txt"}`;
+            fileIdx++;
+          }
+        }
+
+        if (blockFiles.some((f) => f.name === fileName)) {
+          const ext = fileName.includes(".") ? fileName.slice(fileName.lastIndexOf(".")) : "";
+          const base = fileName.includes(".") ? fileName.slice(0, fileName.lastIndexOf(".")) : fileName;
+          fileName = `${base}_${fileIdx}${ext}`;
+          fileIdx++;
+        }
+
+        blockFiles.push({ name: fileName, content: codeContent });
+      }
+
+      if (blockFiles.length > 0) {
+        if (!blockFiles.some((f) => /\.html?$/i.test(f.name)) && blockFiles.some((f) => /\.(css|js|jsx)$/i.test(f.name))) {
+          blockFiles.unshift({
+            name: "index.html",
+            content: `<!DOCTYPE html>\n<html lang="en">\n<head>\n  <meta charset="UTF-8">\n  <meta name="viewport" content="width=device-width, initial-scale=1.0">\n  <title>Preview</title>\n  <link rel="stylesheet" href="styles.css">\n</head>\n<body>\n  <div id="app"></div>\n  <script src="script.js"></script>\n</body>\n</html>`,
+          });
+        }
+
+        return [
+          {
+            id: `auto-${Date.now()}`,
+            type: "project",
+            title: "Interactive Code Project",
+            files: blockFiles,
+          },
+        ];
+      }
+    }
+
+    return [];
+  }, [artifacts, cleanText]);
+
+  const hasArtifacts = resolvedArtifacts.length > 0;
 
   // Determine if this message is an Image, PDF, or PPT response so we hide the copy button
-  const hasArtifactPpt = Array.isArray(artifacts) && artifacts.some(
+  const hasArtifactPpt = resolvedArtifacts.some(
     (art) => art?.type === "ppt" || art?.title?.endsWith(".pptx")
   );
-  const hasArtifactPdf = Array.isArray(artifacts) && artifacts.some(
+  const hasArtifactPdf = resolvedArtifacts.some(
     (art) => art?.type === "pdf" || art?.title?.endsWith(".pdf")
   );
   const hasImages = Array.isArray(allImages) && allImages.length > 0;
@@ -475,7 +542,7 @@ export default function MessageBubble({
         {/* 2. Interactive Artifact Card (Single) */}
         {hasArtifacts && (
           <div className="mb-4 space-y-2 select-none">
-            {artifacts.map((art, idx) => {
+            {resolvedArtifacts.map((art, idx) => {
               const fileCount = Array.isArray(art?.files) ? art.files.length : 0;
               const isPpt = art?.type === "ppt" || art?.title?.endsWith(".pptx");
               const isPdf = art?.type === "pdf" || art?.title?.endsWith(".pdf");
