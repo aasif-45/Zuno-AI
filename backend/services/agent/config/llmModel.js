@@ -50,15 +50,12 @@ const sanitizeResult = (res) => {
   return res;
 };
 
-export const getGroq = (modelName = "openai/gpt-oss-120b") => {
-  if (!groqInstance) {
-    groqInstance = new ChatGroq({
-      apiKey: process.env.GROQ_API_KEY || "",
-      model: modelName,
-      maxRetries: 2,
-    });
-  }
-  return groqInstance;
+export const getGroq = (modelName = "llama-3.3-70b-versatile") => {
+  return new ChatGroq({
+    apiKey: process.env.GROQ_API_KEY || "",
+    model: modelName,
+    maxRetries: 2,
+  });
 };
 
 const getOpenCodeCodingModel = () => {
@@ -76,7 +73,6 @@ const getOpenCodeCodingModel = () => {
       model: "deepseek-v4-flash-free",
       temperature: 0.2,
       maxRetries: 2,
-
       configuration: {
         baseURL: "https://opencode.ai/zen/v1",
       },
@@ -86,7 +82,7 @@ const getOpenCodeCodingModel = () => {
   return openCodeInstance;
 };
 
-export const getGemini = (modelName = "gemini-3.7-flash") => {
+export const getGemini = (modelName = "gemini-2.5-flash") => {
   const apiKey = (process.env.GEMINI_API_KEY || process.env.GOOGLE_API_KEY || "").trim();
   if (!apiKey) {
     return null;
@@ -150,33 +146,32 @@ export const getModel = async (type = "chat") => {
     case "search":
     case "pdf":
     case "ppt":
-      return getOpenCodeCodingModel() || getOpenRouterDeepSeek() || getGemini() || getGroq();
+      return getGroq("llama-3.3-70b-versatile") || getGemini("gemini-2.5-flash") || getOpenCodeCodingModel();
 
     case "router":
-      return getGroq();
+      return getGroq("llama-3.1-8b-instant") || getGroq("llama-3.3-70b-versatile");
 
     case "coding":
-      return getOpenCodeCodingModel() || getOpenRouterDeepSeek() || getGemini() || getGroq();
+      return getGroq("llama-3.3-70b-versatile") || getGemini("gemini-2.5-flash") || getOpenCodeCodingModel();
 
     case "imageAnalyzer":
-      return getGemini();
+      return getGemini("gemini-2.5-flash");
 
     default:
-      return getOpenCodeCodingModel() || getOpenRouterDeepSeek() || getGemini() || getGroq();
+      return getGroq("llama-3.3-70b-versatile") || getGemini("gemini-2.5-flash");
   }
 };
 
 /**
-/**
  * Multi-tier execution pipeline with latency guard:
- * 1. OpenCode (deepseek-v4-flash-free)
- * 2. Google Gemini 3.7 Flash / Gemini 3.1 Flash Lite (ultra fast ~2s, full multi-file code)
- * 3. Groq (openai/gpt-oss-120b / compound ~1.5s)
- * 4. OpenRouter DeepSeek
+ * 1. Primary Model
+ * 2. Groq Llama 3.3 70B Versatile (~1-2s response)
+ * 3. Google Gemini 2.5 Flash / 2.0 Flash (~2s response)
+ * 4. Groq Llama 3.1 8B Instant (~0.5s response)
+ * 5. OpenRouter DeepSeek
  */
 export const invokeModelWithFallback = async (model, input) => {
-  // Helper for racing invocation against a timeout
-  const invokeWithTimeout = (modelInst, ms = 20000) => {
+  const invokeWithTimeout = (modelInst, ms = 25000) => {
     return Promise.race([
       modelInst.invoke(input),
       new Promise((_, reject) =>
@@ -185,11 +180,11 @@ export const invokeModelWithFallback = async (model, input) => {
     ]);
   };
 
-  // Step 1: Specific requested model / OpenCode
+  // Step 1: Specific requested model
   if (model) {
     try {
       console.log("🤖 [AI Agent Pipeline] Executing Primary Model...");
-      const res = await invokeWithTimeout(model, 12000);
+      const res = await invokeWithTimeout(model, 25000);
       console.log("✅ [AI Agent Pipeline] Primary Model succeeded!");
       return sanitizeResult(res);
     } catch (errPrimary) {
@@ -197,35 +192,48 @@ export const invokeModelWithFallback = async (model, input) => {
     }
   }
 
-  // Step 2: Google Gemini 3.7 Flash (Ultra fast 2-3s response, high code quality)
+  // Step 2: Groq Llama 3.3 70B (High quality, extremely fast)
   try {
-    console.log("🔄 [AI Agent Pipeline] Step 2: Executing Google Gemini 3 Flash...");
-    const geminiModel = getGemini();
-    if (geminiModel) {
-      const res = await invokeWithTimeout(geminiModel, 25000);
-      console.log("✅ [AI Agent Pipeline] Google Gemini 3 Flash succeeded!");
-      return sanitizeResult(res);
-    }
-  } catch (errGemini) {
-    console.error("⚠️ [AI Agent Pipeline] Google Gemini 3 Flash failed:", errGemini.message || errGemini);
-  }
-
-  // Step 3: Groq (openai/gpt-oss-120b) (Ultra fast 1-2s response)
-  try {
-    console.log("🔄 [AI Agent Pipeline] Step 3: Executing Groq GPT-OSS 120B...");
-    const groqModel = getGroq();
+    console.log("🔄 [AI Agent Pipeline] Step 2: Executing Groq Llama 3.3 70B...");
+    const groqModel = getGroq("llama-3.3-70b-versatile");
     if (groqModel) {
       const res = await invokeWithTimeout(groqModel, 20000);
-      console.log("✅ [AI Agent Pipeline] Groq GPT-OSS 120B succeeded!");
+      console.log("✅ [AI Agent Pipeline] Groq Llama 3.3 70B succeeded!");
       return sanitizeResult(res);
     }
   } catch (errGroq) {
-    console.error("⚠️ [AI Agent Pipeline] Groq failed:", errGroq.message || errGroq);
+    console.error("⚠️ [AI Agent Pipeline] Groq 70B failed:", errGroq.message || errGroq);
   }
 
-  // Step 4: OpenRouter DeepSeek
+  // Step 3: Google Gemini 2.5 Flash
   try {
-    console.log("🔄 [AI Agent Pipeline] Step 4: Executing OpenRouter DeepSeek...");
+    console.log("🔄 [AI Agent Pipeline] Step 3: Executing Google Gemini 2.5 Flash...");
+    const geminiModel = getGemini("gemini-2.5-flash");
+    if (geminiModel) {
+      const res = await invokeWithTimeout(geminiModel, 25000);
+      console.log("✅ [AI Agent Pipeline] Google Gemini 2.5 Flash succeeded!");
+      return sanitizeResult(res);
+    }
+  } catch (errGemini) {
+    console.error("⚠️ [AI Agent Pipeline] Google Gemini 2.5 Flash failed:", errGemini.message || errGemini);
+  }
+
+  // Step 4: Groq Llama 3.1 8B Instant
+  try {
+    console.log("🔄 [AI Agent Pipeline] Step 4: Executing Groq Llama 3.1 8B Instant...");
+    const groqInstant = getGroq("llama-3.1-8b-instant");
+    if (groqInstant) {
+      const res = await invokeWithTimeout(groqInstant, 15000);
+      console.log("✅ [AI Agent Pipeline] Groq 8B Instant succeeded!");
+      return sanitizeResult(res);
+    }
+  } catch (errGroqInstant) {
+    console.error("⚠️ [AI Agent Pipeline] Groq 8B Instant failed:", errGroqInstant.message || errGroqInstant);
+  }
+
+  // Step 5: OpenRouter DeepSeek
+  try {
+    console.log("🔄 [AI Agent Pipeline] Step 5: Executing OpenRouter DeepSeek...");
     const openRouterModel = getOpenRouterDeepSeek();
     if (openRouterModel) {
       const res = await invokeWithTimeout(openRouterModel, 30000);
