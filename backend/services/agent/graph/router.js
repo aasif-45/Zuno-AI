@@ -65,8 +65,9 @@ export const router = async (state) => {
 
     // Fast-Path Direct Route for Coding & Game / App / Web Projects
     if (
-      /\b(make|build|create|generate|write|develop|code|implement|design)\s+(a\s+|an\s+)?(game|app|website|web app|calculator|clone|dashboard|landing page|todo|portfolio|component|tool|form|timer|tracker|quiz|widget)\b/i.test(lowerPrompt) ||
-      /\b(coin toss|tic tac toe|snake game|pong|rock paper scissors|blackjack|memory game|flappy bird|wordle|hangman|sudoku|card game|roulette)\b/i.test(lowerPrompt) ||
+      /\b(game|balloon|burst|bursting|pop|popping|calculator|simulator|simulation|animation|interactive)\b/i.test(lowerPrompt) ||
+      /\b(make|build|create|generate|write|develop|code|implement|design|give me|show me)\s+(a\s+|an\s+|me\s+(a\s+|an\s+)?)?(game|app|website|web app|calculator|clone|dashboard|landing page|todo|portfolio|component|tool|form|timer|tracker|quiz|widget)\b/i.test(lowerPrompt) ||
+      /\b(coin toss|tic tac toe|snake|pong|rock paper scissors|blackjack|memory game|flappy bird|wordle|hangman|sudoku|card game|roulette|puzzle|arcade|shooter)\b/i.test(lowerPrompt) ||
       /\b(html|css|javascript|react|vue|node|python script|c\+\+|java code|dsa|binary search|sorting algorithm)\b/i.test(lowerPrompt)
     ) {
       console.log(`⚡ [Agent Router] Fast-Path Direct Route: "Auto -> coding" for query: "${rawPrompt.slice(0, 50)}..."`);

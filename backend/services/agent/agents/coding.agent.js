@@ -9,9 +9,14 @@ import {
 function extractArtifactFiles(rawContent, userPrompt) {
   if (!rawContent) return null;
 
-  // 1. Try standard JSON extraction
+  // 1. Try standard JSON extraction (including markdown ```json ... ```)
   try {
-    const jsonMatch = rawContent.match(/\{[\s\S]*\}/);
+    let cleanJson = rawContent;
+    const jsonBlockMatch = rawContent.match(/```(?:json)?\s*([\s\S]*?)```/);
+    if (jsonBlockMatch) {
+      cleanJson = jsonBlockMatch[1];
+    }
+    const jsonMatch = cleanJson.match(/\{[\s\S]*\}/);
     if (jsonMatch) {
       const cleaned = jsonMatch[0]
         .replace(/,\s*([\]}])/g, "$1") // strip trailing commas
@@ -42,13 +47,13 @@ function extractArtifactFiles(rawContent, userPrompt) {
     const explicitName = blockMatch[2] || blockMatch[3] || blockMatch[4];
     const codeContent = (blockMatch[5] || "").trim();
 
-    if (!codeContent) continue;
+    if (!codeContent || lang === "json") continue;
 
     let fileName = explicitName;
     if (!fileName) {
-      if (lang === "html" || codeContent.includes("<!DOCTYPE") || codeContent.includes("<html") || codeContent.includes("<div")) {
+      if (lang === "html" || codeContent.includes("<!DOCTYPE") || codeContent.includes("<html") || codeContent.includes("<div") || codeContent.includes("<canvas") || codeContent.includes("<body")) {
         fileName = "index.html";
-      } else if (lang === "css" || (codeContent.includes("{") && codeContent.includes("margin") && !codeContent.includes("function"))) {
+      } else if (lang === "css" || (codeContent.includes("{") && (codeContent.includes("margin") || codeContent.includes("background") || codeContent.includes("color")) && !codeContent.includes("function"))) {
         fileName = "styles.css";
       } else if (lang === "javascript" || lang === "js" || lang === "ts") {
         fileName = "script.js";
@@ -71,10 +76,19 @@ function extractArtifactFiles(rawContent, userPrompt) {
     blockFiles.push({ name: fileName, content: codeContent });
   }
 
-  if (blockFiles.length > 0) return blockFiles;
+  if (blockFiles.length > 0) {
+    // If we extracted css and js, but no html, create an index.html container
+    if (!blockFiles.some((f) => /\.html?$/i.test(f.name))) {
+      blockFiles.unshift({
+        name: "index.html",
+        content: `<!DOCTYPE html>\n<html lang="en">\n<head>\n  <meta charset="UTF-8">\n  <meta name="viewport" content="width=device-width, initial-scale=1.0">\n  <title>Preview</title>\n  <link rel="stylesheet" href="styles.css">\n</head>\n<body>\n  <div id="app"></div>\n  <script src="script.js"></script>\n</body>\n</html>`,
+      });
+    }
+    return blockFiles;
+  }
 
   // 3. If rawContent itself looks like complete HTML
-  if (rawContent.includes("<!DOCTYPE html") || rawContent.includes("<html")) {
+  if (rawContent.includes("<!DOCTYPE html") || rawContent.includes("<html") || rawContent.includes("<canvas") || rawContent.includes("<body")) {
     return [
       {
         name: "index.html",
@@ -95,8 +109,8 @@ export const codingAgent = async (state) => {
     // Step 1: Detect Intent (Fast Regex + Fallback)
     // ---------------------------
     const isProjectRequest =
-      /\b(make|build|create|generate|write|develop|design|code|implement)\s+(a\s+|an\s+)?(calculator|app|website|web app|game|dashboard|landing page|clone|portfolio|component|tool|ui|todo list|weather app|timer|form|quiz|widget)\b/i.test(lowerPrompt) ||
-      /\b(coin toss|tic tac toe|snake game|pong|rock paper scissors|blackjack|memory game|flappy bird|wordle|hangman|sudoku|card game|roulette)\b/i.test(lowerPrompt) ||
+      /\b(make|build|create|generate|write|develop|design|code|implement|show|give)\s+(a\s+|an\s+|me\s+(a\s+|an\s+)?)?(game|app|website|web app|calculator|clone|dashboard|landing page|todo|portfolio|component|tool|ui|todo list|weather app|timer|form|quiz|widget|simulation|animation|interactive)\b/i.test(lowerPrompt) ||
+      /\b(game|balloon|burst|bursting|pop|popping|coin toss|tic tac toe|snake|pong|rock paper scissors|blackjack|memory game|flappy bird|wordle|hangman|sudoku|card game|roulette|puzzle|shooter|arcade)\b/i.test(lowerPrompt) ||
       /\b(html|css|javascript|frontend|react|full project|multi-file|interactive game)\b/i.test(lowerPrompt);
 
     let intent = isProjectRequest ? "project_generation" : "algo_dsa_code";

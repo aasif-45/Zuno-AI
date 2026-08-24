@@ -25,8 +25,7 @@ export default function Artifact(props) {
   const dispatch = useDispatch();
   const reduxActiveArtifact = useSelector((state) => state.message?.activeArtifact);
 
-  const [copied, setCopied] = useState(false);
-  const [viewMode, setViewMode] = useState("code"); // 'code' | 'preview'
+  const [viewMode, setViewMode] = useState("preview"); // 'code' | 'preview'
   const [isExpanded, setIsExpanded] = useState(false);
   const [previewKey, setPreviewKey] = useState(Date.now());
 
@@ -41,6 +40,11 @@ export default function Artifact(props) {
   React.useEffect(() => {
     if (rawFiles.length > 0) {
       setLocalFiles(rawFiles);
+      const isPreviewable = rawFiles.some((f) => /\.(html|htm|css|js|jsx|svg)$/i.test(f.name));
+      if (isPreviewable) {
+        setViewMode("preview");
+        setPreviewKey(Date.now());
+      }
     }
   }, [artifact]);
 
