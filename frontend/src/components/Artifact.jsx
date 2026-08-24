@@ -28,6 +28,7 @@ export default function Artifact(props) {
   const [viewMode, setViewMode] = useState("preview"); // 'code' | 'preview'
   const [isExpanded, setIsExpanded] = useState(false);
   const [previewKey, setPreviewKey] = useState(Date.now());
+  const [copied, setCopied] = useState(false);
 
   // Support both Redux store state and explicit component props
   const isOpen = props.open !== undefined ? props.open : Boolean(reduxActiveArtifact?.open);
