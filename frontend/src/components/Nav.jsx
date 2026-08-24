@@ -19,7 +19,7 @@ export default function Nav() {
   };
 
   return (
-    <header className="sticky top-0 z-30 flex h-14 items-center justify-between border-b border-white/5 bg-[#212121]/90 backdrop-blur-md px-3 sm:px-4 select-none shrink-0">
+    <header className="sticky top-0 z-30 flex h-14 items-center justify-between border-b border-white/[0.08] bg-[#171717]/85 backdrop-blur-md px-3 sm:px-4 select-none shrink-0">
       {/* Left: Mobile Menu Button + Brand Title */}
       <div className="flex items-center gap-2 min-w-0">
         {/* Mobile Hamburger Toggle Button */}

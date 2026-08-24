@@ -410,7 +410,7 @@ export default function MessageBubble({
               href={filePreviewUrl}
               target="_blank"
               rel="noopener noreferrer"
-              className="flex items-center gap-2 rounded-2xl border border-white/10 bg-[#2f2f2f] px-4 py-2.5 shadow-sm transition-colors hover:bg-[#3a3a3a]"
+              className="flex items-center gap-2 rounded-2xl border border-white/[0.08] bg-[#262628] px-4 py-2.5 shadow-sm transition-colors hover:bg-[#323236]"
             >
               <FileText size={18} className="text-red-400 shrink-0" />
               <span className="truncate text-sm text-slate-200 max-w-[220px]">
@@ -418,7 +418,7 @@ export default function MessageBubble({
               </span>
             </a>
           ) : (
-            <div className="flex items-center gap-2 rounded-2xl border border-white/10 bg-[#2f2f2f] px-4 py-2.5 shadow-sm">
+            <div className="flex items-center gap-2 rounded-2xl border border-white/[0.08] bg-[#262628] px-4 py-2.5 shadow-sm">
               <FileText size={18} className="text-red-400 shrink-0" />
               <span className="truncate text-sm text-slate-200 max-w-[220px]">
                 {fileName || "Attached file"}
@@ -432,7 +432,7 @@ export default function MessageBubble({
             initial={{ opacity: 0, y: 8, scale: 0.98 }}
             animate={{ opacity: 1, y: 0, scale: 1 }}
             transition={{ duration: 0.25, ease: [0.16, 1, 0.3, 1] }}
-            className="max-w-[88%] sm:max-w-xl rounded-2xl sm:rounded-3xl bg-[#2f2f2f] px-4 sm:px-5 py-2 sm:py-2.5 text-sm sm:text-[15px] leading-relaxed text-white font-normal shadow-sm select-text"
+            className="max-w-[88%] sm:max-w-xl rounded-2xl sm:rounded-3xl bg-[#262628] border border-white/[0.08] px-4 sm:px-5 py-2 sm:py-2.5 text-sm sm:text-[15px] leading-relaxed text-white font-normal shadow-sm select-text"
           >
             {content}
           </motion.div>

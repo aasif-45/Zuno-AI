@@ -133,7 +133,7 @@ export default function MessageList({ onOpenArtifact }) {
   // If valid messages list is empty and not loading, show landing state
   if (!validMessages?.length && !loading) {
     return (
-      <div className="flex-1 overflow-y-auto bg-[#212121]">
+      <div className="flex-1 overflow-y-auto bg-[#171717]">
         <div className="flex h-full items-center justify-center px-6">
           <div className="max-w-lg text-center select-none">
             {/* Logo Emblem & Title */}
@@ -179,7 +179,7 @@ export default function MessageList({ onOpenArtifact }) {
     <div
       ref={listRef}
       onScroll={handleScroll}
-      className="relative flex-1 overflow-y-auto bg-[#212121] px-6 py-6 space-y-4 [scrollbar-width:thin] [scrollbar-color:rgba(255,255,255,0.15)_transparent]"
+      className="relative flex-1 overflow-y-auto bg-[#171717] px-6 py-6 space-y-4 [scrollbar-width:thin] [scrollbar-color:rgba(255,255,255,0.15)_transparent]"
     >
       <div className="mx-auto max-w-3xl space-y-4 pb-4">
         {validMessages.map((msg, idx) => {

@@ -516,7 +516,7 @@ export default function ChatInput() {
       </AnimatePresence>
 
       <form onSubmit={handleSubmit} className="mx-auto max-w-4xl">
-        <div className="rounded-[22px] sm:rounded-[28px] border border-white/10 bg-[#2f2f2f] px-3.5 sm:px-5 py-2.5 sm:py-4 shadow-xl">
+        <div className="rounded-[22px] sm:rounded-[28px] border border-white/[0.10] bg-[#212124] focus-within:border-white/20 focus-within:bg-[#232327] px-3.5 sm:px-5 py-2.5 sm:py-3.5 shadow-2xl transition-all">
           {/* Active Speech Recognition Banner */}
           <AnimatePresence>
             {isListening && (

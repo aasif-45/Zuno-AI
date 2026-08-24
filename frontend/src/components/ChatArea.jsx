@@ -71,7 +71,7 @@ export default function ChatArea() {
   };
 
   return (
-    <div className="flex-1 flex flex-col h-screen overflow-hidden bg-[#212121] text-white transition-all duration-300 ease-in-out relative">
+    <div className="flex-1 flex flex-col h-screen overflow-hidden bg-[#171717] text-white transition-all duration-300 ease-in-out relative">
       <Nav />
       <MessageList onOpenArtifact={handleOpenArtifact} />
       <ChatInput />
