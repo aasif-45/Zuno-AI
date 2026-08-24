@@ -53,7 +53,7 @@ export default function AccountMenu({
 
   return (
     <div
-      className={`absolute z-50 w-64 rounded-2xl bg-[#212121] p-1.5 text-white shadow-2xl border border-white/10 select-none animate-in fade-in zoom-in-95 duration-150 ${className}`}
+      className={`absolute z-50 w-64 rounded-2xl bg-[#18181b] p-1.5 text-white shadow-2xl border border-white/[0.12] select-none animate-in fade-in zoom-in-95 duration-150 ${className}`}
       onClick={(e) => e.stopPropagation()}
     >
       {/* Top Profile Header Row */}

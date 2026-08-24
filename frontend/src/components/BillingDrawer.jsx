@@ -254,16 +254,16 @@ const BillingDrawer = ({ open, onClose }) => {
             className="fixed inset-0 z-40 bg-black/70 backdrop-blur-sm transition-opacity"
           />
 
-          {/* ChatGPT Style Drawer / Modal Container */}
+          {/* Modal Container */}
           <motion.div
             initial={{ opacity: 0, scale: 0.96, y: 10 }}
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.96, y: 10 }}
             transition={{ duration: 0.2, ease: "easeOut" }}
-            className="fixed left-1/2 top-1/2 z-50 flex h-[90vh] max-h-[720px] w-[92%] max-w-[860px] -translate-x-1/2 -translate-y-1/2 flex-col rounded-2xl border border-white/10 bg-[#212121] text-white shadow-2xl overflow-hidden select-none"
+            className="fixed left-1/2 top-1/2 z-50 flex h-[90vh] max-h-[720px] w-[92%] max-w-[860px] -translate-x-1/2 -translate-y-1/2 flex-col rounded-3xl border border-white/10 bg-[#14161f] text-white shadow-2xl overflow-hidden select-none"
           >
-            {/* Top ChatGPT Modal Header */}
-            <div className="flex items-center justify-between border-b border-white/10 px-6 py-4 bg-[#212121]">
+            {/* Top Modal Header */}
+            <div className="flex items-center justify-between border-b border-white/10 px-6 py-4 bg-[#14161f]">
               <div>
                 <h2 className="text-xl font-bold text-white tracking-tight">
                   Upgrade your plan
@@ -312,7 +312,7 @@ const BillingDrawer = ({ open, onClose }) => {
             </AnimatePresence>
 
             {/* Current Quota Status Bar */}
-            <div className="mx-6 mt-4 flex items-center justify-between rounded-xl bg-[#2f2f2f] border border-white/5 px-4 py-3 text-xs">
+            <div className="mx-6 mt-4 flex items-center justify-between rounded-2xl bg-[#1c1e28] border border-white/[0.08] px-4 py-3 text-xs">
               <div className="flex items-center gap-2 text-slate-200">
                 <Zap size={15} className="text-amber-400" />
                 <span>
@@ -355,10 +355,10 @@ const BillingDrawer = ({ open, onClose }) => {
                       key={plan.key}
                       className={`relative flex flex-col justify-between rounded-2xl border p-5 transition-all duration-150 ${
                         isCurrent
-                          ? "border-white/20 bg-[#262626]"
+                          ? "border-white/20 bg-[#1c1e28]"
                           : isPro
-                          ? "border-[#10a37f]/50 bg-[#262626] shadow-lg shadow-[#10a37f]/5"
-                          : "border-white/10 bg-[#2f2f2f]/60 hover:border-white/20"
+                          ? "border-[#10a37f]/50 bg-[#1c1e28] shadow-lg shadow-[#10a37f]/10"
+                          : "border-white/10 bg-[#1c1e28]/70 hover:border-white/20"
                       }`}
                     >
                       {/* Popular Badge */}

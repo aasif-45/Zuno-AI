@@ -568,26 +568,27 @@ export default function Sidebar() {
         </div>
       )}
 
-      {/* Billing Drawer Drawer Overlay */}
-      <BillingDrawer
-        open={showBillingDrawer}
-        onClose={() => setShowBillingDrawer(false)}
-      />
-
-      {/* Profile Modal */}
-      <ProfileModal
-        isOpen={showProfileModal}
-        onClose={() => setShowProfileModal(false)}
-        onUpgrade={() => setShowBillingDrawer(true)}
-      />
-
-      {/* Settings Modal */}
-      <SettingsModal
-        isOpen={showSettingsModal}
-        onClose={() => setShowSettingsModal(false)}
-      />
     </aside>
-    </>
-  );
+ 
+    {/* Billing Drawer Overlay */}
+    <BillingDrawer
+      open={showBillingDrawer}
+      onClose={() => setShowBillingDrawer(false)}
+    />
+
+    {/* Profile Modal */}
+    <ProfileModal
+      isOpen={showProfileModal}
+      onClose={() => setShowProfileModal(false)}
+      onUpgrade={() => setShowBillingDrawer(true)}
+    />
+
+    {/* Settings Modal */}
+    <SettingsModal
+      isOpen={showSettingsModal}
+      onClose={() => setShowSettingsModal(false)}
+    />
+  </>
+);
 }
 

@@ -66,7 +66,7 @@ export default function ProfileModal({ isOpen, onClose, onUpgrade }) {
           animate={{ scale: 1, opacity: 1, y: 0 }}
           exit={{ scale: 0.95, opacity: 0, y: 15 }}
           transition={{ type: "spring", duration: 0.25 }}
-          className="relative w-full max-w-lg mx-3 sm:mx-auto overflow-hidden rounded-2xl bg-[#1e1e1e] border border-white/10 text-white shadow-2xl"
+          className="relative w-full max-w-lg mx-3 sm:mx-auto overflow-hidden rounded-3xl bg-[#14161f] border border-white/10 text-white shadow-2xl"
         >
           {/* Header */}
           <div className="flex items-center justify-between border-b border-white/10 px-6 py-4">

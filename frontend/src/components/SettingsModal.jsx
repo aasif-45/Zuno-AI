@@ -82,7 +82,7 @@ export default function SettingsModal({ isOpen, onClose }) {
           animate={{ scale: 1, opacity: 1, y: 0 }}
           exit={{ scale: 0.95, opacity: 0, y: 15 }}
           transition={{ type: "spring", duration: 0.25 }}
-          className="relative w-full max-w-2xl mx-3 sm:mx-auto overflow-hidden rounded-2xl bg-[#1e1e1e] border border-white/10 text-white shadow-2xl flex flex-col md:flex-row min-h-[440px] max-h-[85vh]"
+          className="relative w-full max-w-2xl mx-3 sm:mx-auto overflow-hidden rounded-3xl bg-[#14161f] border border-white/10 text-white shadow-2xl flex flex-col md:flex-row min-h-[440px] max-h-[85vh]"
         >
           {/* Close Button Mobile/Global */}
           <button
@@ -93,7 +93,7 @@ export default function SettingsModal({ isOpen, onClose }) {
           </button>
 
           {/* Left Navigation Sidebar */}
-          <div className="w-full md:w-52 border-b md:border-b-0 md:border-r border-white/10 p-3 bg-[#181818] flex md:flex-col gap-1 shrink-0 overflow-x-auto md:overflow-x-visible">
+          <div className="w-full md:w-52 border-b md:border-b-0 md:border-r border-white/10 p-3 bg-[#0f1118] flex md:flex-col gap-1 shrink-0 overflow-x-auto md:overflow-x-visible">
             <div className="hidden md:flex items-center gap-2 px-3 py-3 mb-2">
               <Settings size={18} className="text-slate-300" />
               <span className="text-sm font-semibold text-white">Settings</span>
