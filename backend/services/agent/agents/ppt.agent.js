@@ -351,11 +351,18 @@ function parseJSON(content = "") {
   const end = candidate.lastIndexOf("}");
 
   if (start === -1 || end === -1 || end <= start) {
-    throw new Error("Invalid JSON structure returned by DeepSeek model");
+    throw new Error("Invalid JSON structure returned by model");
   }
 
   const jsonStr = candidate.substring(start, end + 1);
-  return JSON.parse(jsonStr);
+  try {
+    return JSON.parse(jsonStr);
+  } catch (e) {
+    const cleaned = jsonStr
+      .replace(/,\s*([\]}])/g, "$1")
+      .replace(/[\u0000-\u001F]+/g, (m) => (m === "\n" || m === "\r" || m === "\t" ? m : ""));
+    return JSON.parse(cleaned);
+  }
 }
 
 function escapeHTML(value = "") {

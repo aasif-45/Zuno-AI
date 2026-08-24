@@ -153,6 +153,15 @@ ${prompt}
         `**[Download PDF](${downloadUrl})**\n\n` +
         `*The download link expires in 24 hours.*`,
 
+      artifacts: [
+        {
+          id: randomUUID(),
+          type: "pdf",
+          title: `${safeTitle}.pdf`,
+          url: downloadUrl,
+          downloadUrl: downloadUrl,
+        },
+      ],
       files: [
         {
           type: "pdf",

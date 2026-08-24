@@ -1,15 +1,17 @@
 import { SystemMessage, HumanMessage } from '@langchain/core/messages';
-import { getModel } from '../config/llmModel.js';
+import { getGemini, getOpenRouterDeepSeek, getModel, invokeModelWithFallback } from '../config/llmModel.js';
 import { checkAgentLimit } from '../config/agentLimit.js';
 import { deductCredits } from '../utils/deductCredits.js';
 
 export const imageAnalyzer = async (state) => {
     try {
         // 1. Check rate limits
-        try {
-            await checkAgentLimit(state.userId, 'image');
-        } catch (lErr) {
-            console.warn("Limit check warning:", lErr.message);
+        if (state.userId) {
+            try {
+                await checkAgentLimit(state.userId, 'image');
+            } catch (lErr) {
+                console.warn("Limit check warning:", lErr.message);
+            }
         }
 
         // 2. Convert image file buffer to Base64 (buffer from multer.memoryStorage)
@@ -25,7 +27,7 @@ export const imageAnalyzer = async (state) => {
         const dataUrl = `data:${mime};base64,${base64Image}`;
 
         // 3. Construct prompt messages
-        const systemPrompt = `You are a CORTEX AI vision image analyzer agent.
+        const systemPrompt = `You are Zuno AI vision image analyzer agent.
 Rules:
 - Analyze the uploaded image thoroughly and answer the user's question accurately.
 - Extract any text, labels, charts, code, or recognizable elements.
@@ -35,8 +37,8 @@ Rules:
 
         let aiResponse = "";
 
-        // Attempt 1: Gemini 2.0 Flash Vision
-        const geminiLlm = getGemini();
+        // Attempt 1: Gemini 2.5 Flash Vision
+        const geminiLlm = getGemini("gemini-2.5-flash");
         if (geminiLlm) {
             try {
                 const messages = [
@@ -49,7 +51,7 @@ Rules:
                     })
                 ];
                 const res = await geminiLlm.invoke(messages);
-                aiResponse = res?.content;
+                aiResponse = typeof res?.content === "string" ? res.content : String(res?.content || "");
             } catch (geminiErr) {
                 console.warn("Gemini vision attempt failed:", geminiErr.message);
             }
@@ -70,7 +72,7 @@ Rules:
                         })
                     ];
                     const res = await openRouter.invoke(messages);
-                    aiResponse = res?.content;
+                    aiResponse = typeof res?.content === "string" ? res.content : String(res?.content || "");
                 } catch (orErr) {
                     console.warn("OpenRouter vision attempt failed:", orErr.message);
                 }
@@ -82,9 +84,11 @@ Rules:
         }
 
         // 4. Deduct user credits upon success
-        try {
-            await deductCredits(state.userId, 'image');
-        } catch {}
+        if (state.userId) {
+            try {
+                await deductCredits(state.userId, 'image');
+            } catch {}
+        }
 
         return {
             ...state,
