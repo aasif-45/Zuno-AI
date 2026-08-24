@@ -9,11 +9,11 @@ import { setUserData } from "../redux/userSlice.js";
 
 export default function MessageList({ onOpenArtifact }) {
   const dispatch = useDispatch();
-  const { selectedConversation } = useSelector(
+  const { selectedConversation, conversationsLoading } = useSelector(
     (state) => state.conversation
   );
 
-  const { loading } = useSelector((state) => state.message);
+  const { loading, isFetchingMessages } = useSelector((state) => state.message);
   const rawMessages = useSelector(
     (state) => state.message?.messages || state.message?.message || []
   );
@@ -48,63 +48,40 @@ export default function MessageList({ onOpenArtifact }) {
     if (loading) return;
 
     // Find the user prompt for this turn (preceding user message)
-    let targetUserMsg = null;
+    let promptMsg = null;
     for (let i = msgIndex - 1; i >= 0; i--) {
       if (validMessages[i]?.role === "user") {
-        targetUserMsg = validMessages[i];
+        promptMsg = validMessages[i];
         break;
       }
     }
-    if (!targetUserMsg?.content) return;
+    if (!promptMsg?.content) return;
 
     const convId = selectedConversation?._id;
     if (!convId) return;
 
+    dispatch(setLoading(true));
     try {
-      dispatch(setLoading(true));
-      const res = await sendMessage(targetUserMsg.content, convId, "auto");
-      if (res) {
-        dispatch(
-          addMessage({
-            _id: (Date.now() + 1).toString(),
-            role: "assistant",
-            content: res.aiResponse || res.content || "",
-            images: Array.isArray(res.images) ? res.images : [],
-            artifacts: Array.isArray(res.artifacts) ? res.artifacts : [],
-            conversationId: convId,
-          })
-        );
+      const data = await sendMessage({
+        prompt: promptMsg.content,
+        conversationId: convId,
+      });
+      if (data?.data) {
+        dispatch(addMessage(data.data));
       }
-
-      // Refresh credits
       try {
-        const updatedUser = await getCurrentuser();
-        if (updatedUser) dispatch(setUserData(updatedUser));
-      } catch (e) {
-        console.warn("Credit refresh warning:", e);
-      }
-    } catch (err) {
-      console.error("Regenerate failed:", err);
-      dispatch(
-        addMessage({
-          _id: (Date.now() + 1).toString(),
-          role: "assistant",
-          content: err?.response?.data?.message || "Failed to regenerate response. Please try again.",
-          conversationId: convId,
-        })
-      );
+        const u = await getCurrentuser();
+        if (u) dispatch(setUserData(u));
+      } catch (_) {}
+    } catch (e) {
+      console.error("Regenerate failed:", e);
     } finally {
       dispatch(setLoading(false));
     }
   };
 
   const scrollToBottom = () => {
-    if (messagesEndRef.current) {
-      messagesEndRef.current.scrollIntoView({
-        behavior: "smooth",
-        block: "end",
-      });
-    }
+    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   };
 
   const scrollToPrompt = () => {
@@ -129,6 +106,17 @@ export default function MessageList({ onOpenArtifact }) {
     const { scrollTop, scrollHeight, clientHeight } = listRef.current;
     setShowScrollBottom(scrollHeight - scrollTop - clientHeight > 150);
   };
+
+  // If messages or conversation are actively being fetched/restored, show clean placeholder to prevent "New Chat" flash
+  if (isFetchingMessages || (selectedConversation?._id && !validMessages.length && conversationsLoading)) {
+    return (
+      <div className="flex-1 flex items-center justify-center bg-[#171717]">
+        <div className="flex flex-col items-center gap-3">
+          <div className="h-6 w-6 rounded-full border-2 border-slate-600 border-t-emerald-400 animate-spin" />
+        </div>
+      </div>
+    );
+  }
 
   // If valid messages list is empty and not loading, show landing state
   if (!validMessages?.length && !loading) {

@@ -6,10 +6,16 @@ const conversationSlice = createSlice({
     conversations: [],
     selectedConversation: null,
     isMobileSidebarOpen: false,
+    conversationsLoading: true,
   },
   reducers: {
     setConversation: (state, action) => {
       state.conversations = action.payload;
+      state.conversationsLoading = false;
+    },
+
+    setConversationsLoading: (state, action) => {
+      state.conversationsLoading = action.payload;
     },
 
     addConversation: (state, action) => {
@@ -48,6 +54,7 @@ const conversationSlice = createSlice({
 
 export const {
   setConversation,
+  setConversationsLoading,
   addConversation,
   removeConversation,
   updateConversation,

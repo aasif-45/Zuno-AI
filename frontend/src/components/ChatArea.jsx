@@ -5,7 +5,7 @@ import ChatInput from "./ChatInput.jsx";
 import Artifact from "./Artifact.jsx";
 import { useDispatch, useSelector } from "react-redux";
 import getMessage from "../features/getMessage.js";
-import { setMessage, clearMessages } from "../redux/messageSlice.js";
+import { setMessage, clearMessages, setIsFetchingMessages } from "../redux/messageSlice.js";
 
 export default function ChatArea() {
   const dispatch = useDispatch();
@@ -44,12 +44,25 @@ export default function ChatArea() {
       messages.some((m) => m.conversationId === convId || !m.conversationId);
 
     if (!hasMessagesForCurrentConv) {
+      let isCurrent = true;
       const getMess = async () => {
-        dispatch(clearMessages());
-        const data = await getMessage(convId);
-        dispatch(setMessage(Array.isArray(data) ? data : []));
+        dispatch(setIsFetchingMessages(true));
+        try {
+          const data = await getMessage(convId);
+          if (isCurrent) {
+            dispatch(setMessage(Array.isArray(data) ? data : []));
+          }
+        } catch (err) {
+          if (isCurrent) {
+            dispatch(setMessage([]));
+          }
+        }
       };
       getMess();
+
+      return () => {
+        isCurrent = false;
+      };
     }
   }, [selectedConversation?._id, userData, dispatch]);
 

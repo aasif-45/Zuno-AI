@@ -7,10 +7,16 @@ const messageSlice = createSlice({
     artifacts: [],
     activeArtifact: null, // { open: boolean, artifact: object|null, selectedFile: string|null }
     loading: false,
+    isFetchingMessages: false,
   },
   reducers: {
+    setIsFetchingMessages: (state, action) => {
+      state.isFetchingMessages = action.payload;
+    },
+
     setMessage: (state, action) => {
       state.messages = Array.isArray(action.payload) ? action.payload : [];
+      state.isFetchingMessages = false;
       
       // Auto-extract all artifacts from conversation messages into state.artifacts
       const extracted = [];
@@ -85,6 +91,7 @@ const messageSlice = createSlice({
 
 export const {
   setMessage,
+  setIsFetchingMessages,
   addMessage,
   setLoading,
   clearMessages,

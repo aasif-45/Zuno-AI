@@ -11,7 +11,7 @@ import Artifact from "../../components/Artifact.jsx";
 
 export default function LandingPage() {
   const dispatch = useDispatch();
-  const { userData } = useSelector((state) => state.user);
+  const { userData, authLoading } = useSelector((state) => state.user);
 
   const [authError, setAuthError] = React.useState("");
   const [loadingAuth, setLoadingAuth] = React.useState(false);
@@ -53,6 +53,23 @@ export default function LandingPage() {
       setLoadingAuth(false);
     }
   };
+
+  if (authLoading) {
+    return (
+      <div className="flex h-screen w-full items-center justify-center bg-[#0d0f14] text-white">
+        <div className="flex flex-col items-center gap-3 animate-pulse">
+          <img
+            src="/zuno-icon.png"
+            alt="Zuno AI"
+            className="h-14 w-14 object-contain drop-shadow-[0_0_24px_rgba(56,189,248,0.55)]"
+          />
+          <span className="text-lg font-bold font-sans tracking-tight text-white/90">
+            Zuno AI
+          </span>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="flex h-screen w-full bg-[#0d0f14] text-white overflow-hidden">

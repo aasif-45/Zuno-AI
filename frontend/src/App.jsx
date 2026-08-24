@@ -8,12 +8,24 @@ export default function App() {
   const dispatch = useDispatch();
 
   useEffect(() => {
+    let isMounted = true;
     const getUser = async () => {
-      const data = await getCurrentuser();
-      dispatch(setUserData(data));
+      try {
+        const data = await getCurrentuser();
+        if (isMounted) {
+          dispatch(setUserData(data));
+        }
+      } catch (error) {
+        if (isMounted) {
+          dispatch(setUserData(null));
+        }
+      }
     };
     getUser();
-  }, []);
+    return () => {
+      isMounted = false;
+    };
+  }, [dispatch]);
   return (
     <>
       <LangingPage />

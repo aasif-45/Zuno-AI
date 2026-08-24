@@ -22,12 +22,14 @@ import { updateConversationApi } from "../features/updateConversation";
 import { useDispatch, useSelector } from "react-redux";
 import {
   setConversation,
+  setConversationsLoading,
   addConversation,
   removeConversation,
   updateConversation,
   setSelectedConversation,
   setMobileSidebarOpen,
 } from "../redux/conversationSlice";
+import { clearMessages } from "../redux/messageSlice";
 
 export default function Sidebar() {
   const [collapsed, setCollapsed] = useState(() => {
@@ -39,13 +41,13 @@ export default function Sidebar() {
   });
   const [imageError, setImageError] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
-  const [showSearch, setShowSearch] = useState(false);
+  const [isSearchOpen, setIsSearchOpen] = useState(false);
   const [showAccountMenu, setShowAccountMenu] = useState(false);
   const [showBillingDrawer, setShowBillingDrawer] = useState(false);
   const [showProfileModal, setShowProfileModal] = useState(false);
   const [showSettingsModal, setShowSettingsModal] = useState(false);
 
-  // Sync collapsed state changes to localStorage
+  // Sync collapsed state to localStorage
   useEffect(() => {
     try {
       localStorage.setItem("sidebar_collapsed", String(collapsed));
@@ -66,15 +68,14 @@ export default function Sidebar() {
   const getConvIdFromUrl = () => {
     const match = window.location.pathname.match(/\/c\/([a-zA-Z0-9_-]+)/);
     if (match) return match[1];
-    if (window.location.pathname === "/") return null;
-    return localStorage.getItem("lastConvId");
+    return localStorage.getItem("lastConvId") || null;
   };
 
-  // 1. Immediately set selectedConversation on component mount to keep conversation on refresh
+  // 1. Immediately set selectedConversation on component mount if available to restore state without delay
   useEffect(() => {
     const initialId = getConvIdFromUrl();
     if (initialId && !selectedConversation) {
-      dispatch(setSelectedConversation({ _id: initialId, title: "New Chat" }));
+      dispatch(setSelectedConversation({ _id: initialId, title: "..." }));
     }
   }, []);
 
@@ -82,9 +83,14 @@ export default function Sidebar() {
   useEffect(() => {
     if (!userData) return;
 
+    let isCancelled = false;
+
     const getConv = async () => {
       try {
+        dispatch(setConversationsLoading(true));
         const data = await getConversations();
+        if (isCancelled) return;
+
         const convList = Array.isArray(data) ? data : [];
         dispatch(setConversation(convList));
 
@@ -93,18 +99,23 @@ export default function Sidebar() {
           const matched = convList.find((c) => c._id === urlConvId);
           if (matched) {
             dispatch(setSelectedConversation(matched));
-          } else if (!selectedConversation) {
+          } else {
             dispatch(setSelectedConversation(convList[0]));
           }
-        } else if (convList.length > 0 && !selectedConversation) {
-          dispatch(setSelectedConversation(convList[0]));
         }
       } catch (error) {
-        console.error("Failed to fetch conversations:", error);
+        if (!isCancelled) {
+          console.error("Failed to fetch conversations:", error);
+          dispatch(setConversationsLoading(false));
+        }
       }
     };
 
     getConv();
+
+    return () => {
+      isCancelled = true;
+    };
   }, [dispatch, userData]);
 
   // 3. Update browser URL & localStorage whenever selectedConversation changes
@@ -151,6 +162,7 @@ export default function Sidebar() {
   const handleNewChat = () => {
     localStorage.removeItem("lastConvId");
     dispatch(setSelectedConversation(null));
+    dispatch(clearMessages());
     dispatch(setMobileSidebarOpen(false));
     if (window.location.pathname !== "/") {
       window.history.pushState(null, "", "/");
