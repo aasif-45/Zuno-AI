@@ -42,6 +42,12 @@ const sanitizeResult = (res) => {
     text = String(res.content || "");
   }
 
+  text = text
+    .replace(/\bI'?m MY AI\b/gi, "I\'m Zuno-AI")
+    .replace(/\bMY AI\b/gi, "Zuno-AI")
+    .replace(/\bMY-AI\b/gi, "Zuno-AI")
+    .replace(/\bMY_AI\b/gi, "Zuno-AI");
+
   res.content = cleanMathDollarSigns(text);
   return res;
 };
