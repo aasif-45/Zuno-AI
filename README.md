@@ -1,230 +1,776 @@
-# ⚡ Zuno-AI — Next-Generation Multi-Agent AI Platform
+# Zuno AI - Multi-Agent AI Assistant Platform
 
-<p align="center">
-  <img src="https://img.shields.io/badge/Status-Production%20Ready-emerald?style=for-the-badge&logo=shield" alt="Status" />
-  <img src="https://img.shields.io/badge/Architecture-Microservices-blue?style=for-the-badge&logo=docker" alt="Architecture" />
-  <img src="https://img.shields.io/badge/AI%20Engine-LangGraph%20%7C%20DeepSeek%20%7C%20Gemini-orange?style=for-the-badge&logo=openai" alt="AI Engine" />
-  <img src="https://img.shields.io/badge/Cloud-AWS%20ECS%20%7C%20S3%20%7C%20CloudFront-232F3E?style=for-the-badge&logo=amazon-aws" alt="Cloud" />
-  <img src="https://img.shields.io/badge/License-MIT-purple?style=for-the-badge" alt="License" />
-</p>
+Zuno AI is a full-stack AI assistant platform that combines Google authentication, persistent conversations, multi-agent AI routing, file upload workflows, document generation, image analysis, and credit-based billing in one workspace.
+
+The project is built with a React/Vite frontend and a Node.js microservice-style backend. The backend is containerized with Docker and deployed on AWS using ECR, ECS Fargate, an Application Load Balancer, S3 static website hosting, S3 private file storage, IAM roles, and CloudWatch logs.
 
 ---
 
-## 🌟 Overview
+## Table of Contents
 
-**Zuno-AI** is a cloud-native, enterprise-grade **Multi-Agent Artificial Intelligence Platform** built to seamlessly handle coding, presentations, document analysis, multimodal vision, real-time web search, and general reasoning.
-
-Powered by **LangGraph**, **OpenRouter DeepSeek V4 Flash**, **Google Gemini 3.6 Flash**, and a high-performance **Docker microservices architecture**, Zuno-AI dynamically orchestrates specialized autonomous agents to deliver lightning-fast, high-precision results with live interactive previews.
-
----
-
-## 🚀 Key Features
-
-### 🧠 Autonomous Multi-Agent Routing (LangGraph)
-* **Intelligent Auto-Router**: Automatically analyzes user intent and routes tasks to the optimal domain agent.
-* **Multi-Tier Fault Tolerance**: Redundant fallback chain across OpenRouter (DeepSeek V4 Flash, Nemotron 3 Ultra), Google Gemini, and Groq engines with zero downtime.
-
-### 💻 Interactive Code Studio & Artifacts
-* **Multi-File Project Generation**: Generates complete, executable HTML/CSS/JS frontend projects.
-* **Monaco Editor Integration**: In-browser code editing with syntax highlighting, multi-file tab switching, and direct ZIP export.
-* **Live Sandbox Preview**: Instant iframe preview execution with hot reload and error boundary protection.
-
-### 📊 Presentation Generator (PPTX)
-* **Dynamic Multi-Slide Decks**: Generates professional, themed PowerPoint (`.pptx`) decks with 10+ distinct slide layouts.
-* **Zero AI Image Token Consumption**: Automatic retrieval of high-resolution context-aware web and stock imagery via Tavily and Unsplash.
-* **Native PPTXGenJS Engine**: Color tokens, typography hierarchy, and automatic text overflow protection.
-
-### 📄 Smart PDF & Document RAG
-* **Styled PDF Generation**: Creates publication-ready PDFs with clean typography, headers, callouts, and inline photos.
-* **Vector Document Q&A (RAG)**: Upload documents for hybrid semantic search and retrieval powered by **Qdrant Vector Database**.
-
-### 🔍 Real-Time Grounded Web Search
-* **Tavily Search Grounding**: Fetches live real-time information with source attribution, conflict resolution, and fact ranking.
-* **Time & Date Awareness**: Accurate live timestamps across global time zones.
-
-### 👁️ Multimodal Vision & Image Analysis
-* **Google Gemini 3.6 Flash Vision**: Deep visual comprehension for diagrams, charts, UI mockups, handwritten notes, and photos.
-
-### 💳 Tiered Billing & Subscription Management
-* **Razorpay Integration**: Automated payment processing, invoice tracking, webhooks, and subscription tiers (Free, Starter, Pro).
+- [Overview](#overview)
+- [Core Features](#core-features)
+- [Architecture](#architecture)
+- [Backend Services](#backend-services)
+- [AI Agent System](#ai-agent-system)
+- [Authentication and Sessions](#authentication-and-sessions)
+- [Billing and Credits](#billing-and-credits)
+- [Data Model](#data-model)
+- [File Storage](#file-storage)
+- [Tech Stack](#tech-stack)
+- [Repository Structure](#repository-structure)
+- [Environment Variables](#environment-variables)
+- [Local Development](#local-development)
+- [AWS Deployment](#aws-deployment)
+- [Important Engineering Decisions](#important-engineering-decisions)
+- [Known Improvements](#known-improvements)
+- [Interview Summary](#interview-summary)
 
 ---
 
-## 🏗️ Architecture & System Design
+## Overview
 
-```mermaid
-graph TD
-    Client["💻 Web Client (React + Vite + Tailwind)"] --> CDN["⚡ AWS CloudFront CDN"]
-    CDN --> S3["🪣 AWS S3 (Frontend Assets)"]
-    Client --> GW["🛡️ Gateway Service (Port 3000)"]
-    
-    subgraph AWS ECS Cluster [AWS ECS Fargate Cluster]
-        GW --> AgentSvc["🤖 Agent Service (LangGraph Engine)"]
-        GW --> ChatSvc["💬 Chat Service (History & Storage)"]
-        GW --> AuthSvc["🔐 Auth Service (Firebase / JWT)"]
-        GW --> BillingSvc["💳 Billing Service (Razorpay)"]
-    end
+Most AI chat applications only support text prompts. Zuno AI extends that idea into a practical AI workspace where users can:
 
-    subgraph Data & Persistence
-        AgentSvc --> Redis[("⚡ Redis Cache & State")]
-        AgentSvc --> Qdrant[("🎯 Qdrant Vector DB")]
-        ChatSvc --> Mongo[("🍃 MongoDB Atlas")]
-        BillingSvc --> Mongo
-        AuthSvc --> Mongo
-    end
+- Sign in with Google.
+- Create and continue conversations.
+- Route prompts automatically to the correct AI agent.
+- Ask general questions.
+- Generate and debug code.
+- Generate PDFs and PowerPoint presentations.
+- Upload PDFs for document analysis.
+- Upload images for multimodal analysis.
+- Generate images.
+- Store generated files in S3.
+- Upgrade plans using Razorpay.
+- Spend AI credits based on the agent used.
 
-    subgraph AI Providers & APIs
-        AgentSvc --> OpenRouter["⚡ OpenRouter (DeepSeek V4 / Nemotron)"]
-        AgentSvc --> Gemini["✨ Google Gemini 3.6 Flash"]
-        AgentSvc --> Groq["🚀 Groq LLM Cloud"]
-        AgentSvc --> Tavily["🌐 Tavily Web Search API"]
-    end
+The main goal of the project is to demonstrate a production-style full-stack architecture around AI workflows, not just a single chat API call.
+
+---
+
+## Core Features
+
+### Multi-Agent AI Workspace
+
+Zuno AI supports multiple specialized AI modes:
+
+- Auto routing
+- General chat
+- Web/search style responses
+- Coding assistance
+- PDF generation
+- PDF upload and analysis
+- PPT generation
+- Image generation
+- Image upload and analysis
+
+### Persistent Conversations
+
+Users can create conversations, store messages, reload history, rename conversations using generated titles, and delete conversations.
+
+### Google Authentication
+
+The frontend uses Firebase Google login. The backend verifies Firebase ID tokens using Firebase Admin, creates/fetches the user in MongoDB, and creates a Redis-backed server session.
+
+### Credit-Based Billing
+
+The platform includes a simple credit system:
+
+- Free plan: 100 credits
+- Starter plan: 500 credits
+- Pro plan: 1000 credits
+
+Razorpay is used for order creation and secure payment verification.
+
+### AWS Deployment
+
+The backend is deployed as Docker containers on ECS Fargate. The frontend is built and uploaded to an S3 static website bucket. Uploaded/generated files use a separate private S3 bucket.
+
+---
+
+## Architecture
+
+```text
+Browser
+  |
+  | React + Vite frontend
+  | Firebase Google login
+  v
+S3 Static Website Hosting
+  |
+  v
+Application Load Balancer
+  |
+  v
+Gateway Service - Express
+  |
+  |-- /api/auth    -> Auth Service
+  |-- /api/chat    -> Chat Service
+  |-- /api/agent   -> Agent Service
+  |-- /api/billing -> Billing Service
+  |
+  v
+Backend Services
+  |
+  |-- MongoDB: users, conversations, messages, payments
+  |-- Redis: sessions, memory, rate limiting
+  |-- S3: uploaded and generated files
+  |-- Razorpay: payment orders and verification
+  |-- AI Providers: OpenRouter, Gemini, Groq, Tavily, Qdrant
+```
+
+### Current AWS Runtime Layout
+
+For the current deployment, the backend services run together in one ECS Fargate task:
+
+```text
+ECS Task
+  |-- gateway  :3000
+  |-- auth     :3005
+  |-- chat     :3010
+  |-- agent    :3015
+  |-- billing  :3020
+  |-- redis    :6379
+```
+
+This all-in-one task design keeps networking simple for the first production deployment because services communicate through `localhost`. A future production version can split these into independent ECS services using ECS Service Connect or AWS Cloud Map.
+
+---
+
+## Backend Services
+
+### Gateway Service
+
+Path: `backend/gateway`
+
+Responsibilities:
+
+- Public API entrypoint
+- CORS handling
+- Cookie parsing
+- Redis session validation
+- Protected route handling
+- Proxying requests to internal services
+- Forwarding authenticated user context through headers
+
+Important routes:
+
+```text
+/api/auth
+/api/chat
+/api/agent
+/api/billing
+/api/me
+```
+
+### Auth Service
+
+Path: `backend/services/auth`
+
+Responsibilities:
+
+- Verify Firebase ID tokens
+- Create/fetch users in MongoDB
+- Create Redis sessions
+- Store user plan and credits
+- Update user plan after payment
+- Deduct credits after AI usage
+
+### Chat Service
+
+Path: `backend/services/chat`
+
+Responsibilities:
+
+- Create conversations
+- List conversations by user
+- Update conversation titles
+- Save user/assistant messages
+- Fetch message history
+- Delete conversations and related messages
+
+### Agent Service
+
+Path: `backend/services/agent`
+
+Responsibilities:
+
+- Receive user prompts and optional files
+- Upload files to S3
+- Route work through LangGraph
+- Execute specialized agents
+- Save AI results
+- Generate conversation titles
+- Check rate limits
+- Check and deduct credits
+
+### Billing Service
+
+Path: `backend/services/Billing`
+
+Responsibilities:
+
+- Create Razorpay orders
+- Store payment records
+- Verify Razorpay signatures
+- Mark payments as paid
+- Notify auth service to update plan and credits
+
+---
+
+## AI Agent System
+
+The agent system is implemented with LangGraph.
+
+### Agent Graph
+
+```text
+START
+  |
+  v
+router
+  |
+  |-- chat          -> END
+  |-- search        -> chat -> END
+  |-- coding        -> END
+  |-- pdf           -> END
+  |-- ppt           -> END
+  |-- imageGen      -> END
+  |-- pdfRag        -> END
+  |-- imageAnalyzer -> END
+```
+
+### Routing Strategy
+
+Routing is not only LLM-based. It uses a layered approach:
+
+1. Uploaded file type has highest priority.
+   - PDF upload routes to PDF RAG.
+   - Image upload routes to image analysis.
+2. Explicit user-selected agent is considered.
+3. Keyword fast paths handle obvious cases like PDF, PPT, code, image generation, and search.
+4. An LLM classifier is used as a fallback for ambiguous prompts.
+
+This design reduces cost and latency because obvious cases do not need model classification.
+
+### Model Fallback Strategy
+
+The backend supports multiple model providers:
+
+- OpenRouter
+- Google Gemini
+- Groq
+
+The model execution layer attempts a primary model first, then falls back to other providers when limits, timeouts, or provider errors occur.
+
+---
+
+## Authentication and Sessions
+
+Authentication combines Firebase identity with Redis application sessions.
+
+### Login Flow
+
+```text
+User clicks Google Login
+  |
+  v
+Firebase returns ID token
+  |
+  v
+Frontend sends token to /api/auth/login
+  |
+  v
+Auth service verifies token using Firebase Admin
+  |
+  v
+MongoDB user is created or fetched
+  |
+  v
+Random session ID is generated
+  |
+  v
+Session payload is stored in Redis
+  |
+  v
+Frontend stores session ID and user data
+```
+
+### Why Redis Sessions?
+
+Redis stores app-specific session state such as:
+
+- User ID
+- Name and email
+- Plan
+- Credits
+- Session ID
+- Expiration
+
+This allows the gateway to validate requests quickly without every service verifying Firebase tokens.
+
+---
+
+## Billing and Credits
+
+### Plans
+
+| Plan | Price | Credits |
+|---|---:|---:|
+| Free | INR 0 | 100 |
+| Starter | INR 199 | 500 |
+| Pro | INR 499 | 1000 |
+
+### Credit Cost by Agent
+
+| Agent | Credits |
+|---|---:|
+| Chat | 2 |
+| Search | 3 |
+| Coding | 3 |
+| Image | 4 |
+| PDF | 5 |
+| PPT | 5 |
+
+### Payment Verification
+
+Razorpay payment verification is done on the backend using HMAC SHA-256. The backend verifies the signature before updating the user's plan and credits.
+
+This is important because frontend callbacks alone cannot be trusted.
+
+---
+
+## Data Model
+
+### User
+
+Stores:
+
+- Firebase UID
+- Name
+- Email
+- Avatar
+- Plan
+- Credits
+- Total credits
+- Plan start date
+- Plan expiry date
+
+### Conversation
+
+Stores:
+
+- Title
+- User ID
+- Created/updated timestamps
+
+### Message
+
+Stores:
+
+- Conversation ID
+- Role: `user` or `assistant`
+- Content
+- Images
+- Artifacts
+- File name
+- File type
+- File URL
+- Created/updated timestamps
+
+### Payment
+
+Stores:
+
+- User ID
+- Razorpay order ID
+- Razorpay payment ID
+- Amount
+- Currency
+- Credits
+- Plan
+- Status
+- Paid timestamp
+
+---
+
+## File Storage
+
+Files are not stored directly in MongoDB.
+
+The system stores:
+
+- Actual files in S3
+- File metadata in MongoDB
+
+This is used for:
+
+- Uploaded images
+- Uploaded PDFs
+- Generated PDFs
+- Generated PPTs
+- Other downloadable artifacts
+
+The upload bucket is intended to stay private. The backend can return presigned URLs or redirect to short-lived S3 access links.
+
+---
+
+## Tech Stack
+
+### Frontend
+
+- React 19
+- Vite
+- Redux Toolkit
+- Tailwind CSS
+- Axios
+- Firebase Auth
+- Razorpay Checkout
+- React Markdown
+- Lucide React
+- Motion
+- JSZip / File Saver
+
+### Backend
+
+- Node.js 22
+- Express.js
+- MongoDB / Mongoose
+- Redis / ioredis
+- Firebase Admin
+- Razorpay SDK
+- LangChain
+- LangGraph
+- Multer
+- AWS SDK for S3
+- Puppeteer
+- PPTXGenJS
+
+### AI and Integrations
+
+- OpenRouter
+- Google Gemini
+- Groq
+- Tavily
+- Qdrant
+
+### Cloud and DevOps
+
+- Docker
+- AWS ECR
+- AWS ECS Fargate
+- AWS Application Load Balancer
+- AWS S3
+- AWS IAM
+- AWS CloudWatch Logs
+- PowerShell deployment scripts
+
+---
+
+## Repository Structure
+
+```text
+.
+|-- backend
+|   |-- gateway
+|   |   |-- index.js
+|   |   |-- middleware
+|   |   |-- controllers
+|   |   |-- utils
+|   |   `-- Dockerfile
+|   |-- services
+|   |   |-- auth
+|   |   |-- chat
+|   |   |-- agent
+|   |   `-- Billing
+|   |-- shared
+|   |   `-- redis
+|   |-- package.json
+|   `-- docker-compose.yml
+|-- frontend
+|   |-- src
+|   |   |-- components
+|   |   |-- features
+|   |   |-- pages
+|   |   |-- redux
+|   |   `-- utils
+|   |-- public
+|   |-- package.json
+|   `-- vite.config.js
+|-- deploy
+|   `-- aws
+|       |-- create-ecr-repos.ps1
+|       |-- build-and-push-backend.ps1
+|       |-- deploy-ecs-all-in-one.ps1
+|       |-- deploy-frontend-s3.ps1
+|       `-- README.md
+|-- .github
+|   `-- workflows
+|-- README.md
+`-- skills-lock.json
 ```
 
 ---
 
-## 📂 Repository Structure
+## Environment Variables
 
-```
-Zuno-AI/
-├── .github/
-│   └── workflows/
-│       └── deploy.yml              # Automated AWS CI/CD Pipeline
-├── backend/
-│   ├── gateway/                    # API Gateway & Reverse Proxy (Port 3000)
-│   ├── services/
-│   │   ├── agent/                  # LangGraph Multi-Agent Engine (Port 3015)
-│   │   │   ├── agents/             # Chat, Coding, PPT, PDF, PDF-RAG, Vision, Search
-│   │   │   ├── config/             # Multi-Tier LLM Model Providers & Router
-│   │   │   └── utils/              # PPTX, PDF, and Image Processing Engines
-│   │   ├── auth/                   # Authentication & User Management (Port 3011)
-│   │   ├── chat/                   # Conversation & Message History (Port 3012)
-│   │   └── Billing/                # Razorpay Subscriptions & Webhooks (Port 3014)
-│   └── shared/                     # Shared Redis, Database, & Utility Modules
-├── frontend/                       # Modern React 19 + Vite Web Application
-│   ├── src/
-│   │   ├── components/             # Artifact Studio, Message Bubble, Chat, Sidebar
-│   │   ├── context/                # Global Theme, Auth, and WebRTC Contexts
-│   │   ├── redux/                  # Message & User Redux Slices
-│   │   └── utils/                  # Live Code Execution & File Helpers
-│   └── vite.config.js
-└── deploy/
-    └── aws/                        # ECS, ECR, S3, & CloudFront Deployment Scripts
-```
+Each service uses its own `.env` file during local development. Do not commit real secrets.
 
----
-
-## 🛠️ Technology Stack
-
-| Layer | Technologies |
-|---|---|
-| **Frontend** | React 19, Vite, Tailwind CSS, Motion/React, Monaco Editor, Lucide Icons, JSZip, File-Saver |
-| **Backend Framework** | Node.js (v22), Express.js, LangChain, LangGraph |
-| **AI & LLM Engines** | OpenRouter (DeepSeek V4 Flash, Nemotron 3 Ultra), Google Gemini 3.6 Flash, Groq |
-| **Databases & Vector** | MongoDB Atlas, Qdrant Vector Database, Redis (IORedis) |
-| **Search & Media** | Tavily Search API, Puppeteer, PPTXGenJS, Canvas |
-| **Auth & Payments** | Firebase Auth, JWT, Razorpay Payments API |
-| **DevOps & Cloud** | Docker, AWS ECS Fargate, AWS ECR, AWS S3, AWS CloudFront, GitHub Actions |
-
----
-
-## ⚙️ Environment Configuration
-
-Create a `.env` file in the root and in respective microservice directories:
+### Frontend
 
 ```env
-# Server & Ports
+VITE_FIREBASE_API_KEY=
+VITE_SERVER_URL=http://localhost:3000
+VITE_RAZORPAY_KEY_ID=
+```
+
+### Gateway
+
+```env
 PORT=3000
-NODE_ENV=production
-FRONTEND_URL=https://your-cloudfront-domain.cloudfront.net
+FRONTEND_URL=http://localhost:5173
+AUTH_SERVICE=http://localhost:3005
+CHAT_SERVICE=http://localhost:3010
+AGENT_SERVICE=http://localhost:3015
+BILLING_SERVICE=http://localhost:3020
+REDIS_URL=redis://localhost:6379
+```
 
-# Databases
-MONGO_URI=mongodb+srv://<username>:<password>@cluster.mongodb.net/zuno-ai
-REDIS_URL=redis://:<password>@<redis-host>:6379
-QDRANT_URL=https://<your-qdrant-cluster-url>.qdrant.tech
-QDRANT_API_KEY=your_qdrant_api_key
+### Auth Service
 
-# AI Provider API Keys
-OPENROUTER_API_KEY=sk-or-v1-...
-GEMINI_API_KEY=AIzaSy...
-GROQ_API_KEY=gsk_...
-TAVILY_API_KEY=tvly-...
+```env
+PORT=3005
+MONGO_URI=
+REDIS_URL=redis://localhost:6379
+```
 
-# Authentication & Billing
-JWT_SECRET=your_super_secret_jwt_key
-FIREBASE_SERVICE_ACCOUNT={"type":"service_account",...}
-RAZORPAY_KEY_ID=rzp_live_...
-RAZORPAY_KEY_SECRET=your_razorpay_secret
+### Chat Service
+
+```env
+PORT=3010
+MONGO_URI=
+```
+
+### Agent Service
+
+```env
+PORT=3015
+MONGO_URI=
+REDIS_URL=redis://localhost:6379
+AUTH_SERVICE=http://localhost:3005
+CHAT_SERVICE=http://localhost:3010
+AWS_REGION=
+AWS_S3_BUCKET_NAME=
+GROQ_API_KEY=
+GOOGLE_API_KEY=
+OPENROUTER_API_KEY=
+TAVILY_API_KEY=
+QDRANT_URL=
+QDRANT_API_KEY=
+CF_IMAGE_API_URL=
+CF_IMAGE_API_KEY=
+```
+
+### Billing Service
+
+```env
+PORT=3020
+MONGO_URI=
+AUTH_SERVICE=http://localhost:3005
+CHAT_SERVICE=http://localhost:3010
+AGENT_SERVICE=http://localhost:3015
+RAZORPAY_KEY_ID=
+RAZORPAY_KEY_SECRET=
 ```
 
 ---
 
-## 🚀 Local Development Setup
+## Local Development
 
-### 1. Prerequisites
-* **Node.js** (v20 or v22)
-* **Docker Desktop** (Optional, for containerized local execution)
-* **Git**
+Install dependencies inside each app/service folder. The repository intentionally does not require committing `node_modules`.
 
-### 2. Clone the Repository
-```bash
-git clone https://github.com/aasif-45/Zuno-AI.git
-cd Zuno-AI
-```
+### 1. Frontend
 
-### 3. Install & Start Backend Services
-```bash
-# Install root dependencies
-npm install
-
-# Start all microservices concurrently
-npm run dev
-```
-
-### 4. Install & Start Frontend
-```bash
+```powershell
 cd frontend
 npm install
 npm run dev
 ```
-Open **`http://localhost:5173`** in your browser.
+
+Frontend runs on:
+
+```text
+http://localhost:5173
+```
+
+### 2. Backend Root
+
+```powershell
+cd backend
+npm install
+```
+
+### 3. Gateway
+
+```powershell
+cd backend/gateway
+npm install
+npm run dev
+```
+
+### 4. Auth Service
+
+```powershell
+cd backend/services/auth
+npm install
+npm run dev
+```
+
+### 5. Chat Service
+
+```powershell
+cd backend/services/chat
+npm install
+npm run dev
+```
+
+### 6. Agent Service
+
+```powershell
+cd backend/services/agent
+npm install
+npm run dev
+```
+
+### 7. Billing Service
+
+```powershell
+cd backend/services/Billing
+npm install
+npm run dev
+```
+
+### 8. Redis
+
+For local Redis, use Docker:
+
+```powershell
+cd backend
+docker compose up -d
+```
 
 ---
 
-## 🚢 Production Deployment
+## AWS Deployment
 
-Zuno-AI is configured for continuous zero-downtime deployment to **AWS**:
+Deployment helpers are in:
 
-1. **Automated CI/CD**:
-   - Push to `main` triggers `.github/workflows/deploy.yml`.
-   - Microservices are packaged as lightweight Linux Docker containers, tagged, and pushed to **AWS ECR**.
-   - **AWS ECS (Fargate)** triggers a rolling zero-downtime update.
-   - Frontend is built and synced to **AWS S3**, followed by a global **CloudFront CDN** invalidation.
+```text
+deploy/aws
+```
 
-2. **Manual CLI Deployment**:
-   ```powershell
-   # Sync Frontend directly to S3 and Invalidate CloudFront CDN
-   aws s3 sync frontend/dist s3://myai-demo1/ --delete
-   aws cloudfront create-invalidation --distribution-id ED6NUYKT6EJ1M --paths "/*"
+### Prerequisites
 
-   # Trigger ECS Task Update
-   aws ecs update-service --cluster backend --service agent-service --force-new-deployment --region us-east-1
-   ```
+```powershell
+aws configure
+aws sts get-caller-identity
+docker info
+```
+
+### Create ECR Repositories
+
+```powershell
+.\deploy\aws\create-ecr-repos.ps1 -Region ap-south-1
+```
+
+### Build and Push Backend Images
+
+```powershell
+.\deploy\aws\build-and-push-backend.ps1 `
+  -AccountId YOUR_ACCOUNT_ID `
+  -Region ap-south-1
+```
+
+### Deploy ECS Backend
+
+```powershell
+.\deploy\aws\deploy-ecs-all-in-one.ps1 `
+  -AccountId YOUR_ACCOUNT_ID `
+  -Region ap-south-1 `
+  -FrontendUrl http://your-frontend-bucket.s3-website.ap-south-1.amazonaws.com `
+  -UploadBucket your-private-upload-bucket
+```
+
+### Deploy Frontend to S3
+
+```powershell
+.\deploy\aws\deploy-frontend-s3.ps1 `
+  -BucketName your-public-frontend-bucket `
+  -GatewayUrl http://your-alb-dns-name `
+  -Region ap-south-1
+```
+
+### Notes
+
+- Use one public S3 bucket for frontend assets.
+- Use a separate private S3 bucket for uploaded/generated files.
+- Do not put secret keys in frontend environment variables.
+- For production HTTPS, put CloudFront and ACM in front of the frontend and/or API.
+- The included GitHub Actions workflow may need region, ECR repository, ECS service, S3 bucket, and CloudFront values updated before use.
 
 ---
 
-## 🛡️ Security & Privacy
-* **End-to-End JWT Authentication** across all inter-service communication.
-* **Isolated Code Execution**: Browser artifacts execute in sandboxed `about:srcdoc` iframes without direct cookie or session storage access.
-* **Strict Attribute Stripping**: Markdown and math formulas are sanitized against prompt injections.
+## Important Engineering Decisions
+
+### Gateway Instead of Direct Service Access
+
+The frontend only talks to the gateway. The gateway validates sessions and forwards requests to internal services. This keeps authentication and CORS centralized.
+
+### Firebase Identity + Redis Sessions
+
+Firebase proves the user's Google identity. Redis stores application session data such as user ID, plan, credits, and session expiry.
+
+### Rule-Based + LLM-Based Agent Routing
+
+The router handles obvious cases with deterministic rules and uses an LLM classifier only when required. This improves speed, cost, and reliability.
+
+### S3 for Files
+
+Generated files and uploads are stored in S3 instead of MongoDB. MongoDB stores metadata only.
+
+### Credit Deduction After Agent Execution
+
+The system deducts credits based on the actual agent used, not only the mode selected in the UI.
 
 ---
 
-## 📄 License
-This project is licensed under the **MIT License**.
+## Known Improvements
+
+The current version is deployment-ready for demonstration and interview purposes. For a larger production system, the next improvements would be:
+
+- Move Redis from the ECS task into ElastiCache.
+- Split the all-in-one ECS task into separate ECS services.
+- Use ECS Service Connect or AWS Cloud Map for service discovery.
+- Store secrets in AWS Secrets Manager.
+- Add HTTPS with CloudFront and ACM.
+- Add API request validation.
+- Add automated tests for auth, billing, routing, and chat flows.
+- Add pagination for long message histories.
+- Add queues for long-running PDF/PPT/image generation.
+- Replace broad Redis session scans with direct session indexes.
+- Add dashboards and alarms in CloudWatch.
 
 ---
 
-<p align="center">
-  <b>Built with ❤️ for the Next Generation of AI Experiences.</b>
-</p>
+## Interview Summary
+
+Use this explanation in interviews:
+
+> Zuno AI is a full-stack multi-agent AI assistant platform. The frontend is built with React, Vite, Redux Toolkit, Tailwind CSS, and Firebase Google login. The backend is split into gateway, auth, chat, agent, and billing services. The gateway validates Redis sessions and proxies requests to internal services. The agent service uses LangGraph to route prompts and uploaded files to specialized agents such as chat, coding, PDF generation, PDF RAG, image analysis, image generation, and PPT generation. MongoDB stores users, conversations, messages, and payments; Redis stores sessions, memory, and rate limits; S3 stores uploaded and generated files; Razorpay handles plan upgrades and credit purchases. I containerized the backend and deployed it on AWS ECS Fargate with ECR, ALB, S3, IAM, and CloudWatch.
+
+---
+
+## License
+
+This project is currently marked as ISC in the backend package metadata. Add a dedicated `LICENSE` file if you plan to publish it as open source.
