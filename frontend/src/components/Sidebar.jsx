@@ -493,7 +493,11 @@ export default function Sidebar() {
               title="Open sidebar"
               className="group flex h-8 w-8 items-center justify-center rounded-lg text-white hover:bg-white/10 transition-colors cursor-pointer outline-none focus:outline-none"
             >
-              <Sparkles size={20} className="block group-hover:hidden" />
+              <img
+                src="/zuno-icon.png"
+                alt="Zuno AI"
+                className="h-6 w-6 object-contain block group-hover:hidden drop-shadow-[0_0_6px_rgba(56,189,248,0.4)]"
+              />
               <PanelLeft size={20} className="hidden group-hover:block text-slate-200" />
             </button>
 
