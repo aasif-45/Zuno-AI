@@ -141,11 +141,11 @@ export const getOpenRouterNemotron3Ultra = () => {
 export const getModel = async (type = "chat") => {
   switch (type) {
     case "coding":
-      // Primary: OpenRouter DeepSeek V4 Flash -> Nemotron 3 Ultra -> LangChain Groq (Qwen)
+      // Primary: OpenRouter DeepSeek V4 Flash -> Nemotron 3 Ultra -> Groq Qwen
       return getOpenRouterDeepSeekV4() || getOpenRouterNemotron3Ultra() || getGroq("qwen/qwen3.6-27b");
 
     case "router":
-      // Primary: OpenRouter DeepSeek V4 Flash -> Groq (Qwen)
+      // Primary: OpenRouter DeepSeek V4 Flash -> Groq Qwen
       return getOpenRouterDeepSeekV4() || getGroq("qwen/qwen3.6-27b");
 
     case "imageAnalyzer":
@@ -158,8 +158,9 @@ export const getModel = async (type = "chat") => {
     case "search":
     case "chat":
     default:
-      // qwen/qwen3.6-27b: neutral, no brand identity, respects system prompt
-      return getGroq("qwen/qwen3.6-27b") || getGemini("gemini-3.6-flash");
+      // Primary: OpenRouter DeepSeek V4 Flash (clean - no MY AI training)
+      // Fallback: Gemini 3.6 Flash (also clean)
+      return getOpenRouterDeepSeekV4() || getGemini("gemini-3.6-flash");
   }
 };
 
