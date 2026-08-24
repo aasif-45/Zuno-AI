@@ -11,28 +11,22 @@ let groqInstance = null;
 let geminiInstance = null;
 let currentGeminiKey = null;
 let openRouterDeepSeekInstance = null;
+let openRouterNemotronInstance = null;
 let currentOpenRouterKey = null;
-let openCodeInstance = null;
-let currentOpenCodeKey = null;
 let genAIClient = null;
 
 /**
-  Strips unwanted LaTeX signs and enforces Zuno AI identity
+ * Strips unwanted LaTeX signs and enforces Zuno AI identity
  */
 export const cleanMathDollarSigns = (content = "") => {
   if (typeof content !== "string" || !content) return content;
   return content
     .replace(/\$O\(([^$]+?)\)\$/gi, "O($1)")
-    .replace(/\$([a-zA-Z0-9_\^+-]{1,15})\$/g, "$1")
-    .replace(/\bdeveloped by OpenAI\b/gi, "developed by the Zuno AI team")
-    .replace(/\bcreated by OpenAI\b/gi, "created by the Zuno AI team")
-    .replace(/\bbased on (GPT-4|GPT-3\.5|ChatGPT)\b/gi, "powered by the Zuno AI neural engine")
-    .replace(/\bI am ChatGPT\b/gi, "I am Zuno AI")
-    .replace(/\bI am an AI assistant developed by OpenAI\b/gi, "I am Zuno AI, an advanced AI assistant");
+    .replace(/\$([a-zA-Z0-9_\^+-]{1,15})\$/g, "$1");
 };
 
 const sanitizeResult = (res) => {
-  if (!res) return { content: "Hello! I am Zuno AI, how can I help you today?" };
+  if (!res) return { content: "No limit left. Please try again later or upgrade your plan." };
   let text = "";
   if (typeof res.content === "string") {
     text = res.content;
@@ -58,31 +52,7 @@ export const getGroq = (modelName = "llama-3.3-70b-versatile") => {
   });
 };
 
-const getOpenCodeCodingModel = () => {
-  const apiKey = (process.env.OPENCODE_API_KEY || "").trim();
-
-  if (!apiKey) {
-    return null;
-  }
-
-  if (!openCodeInstance || currentOpenCodeKey !== apiKey) {
-    currentOpenCodeKey = apiKey;
-
-    openCodeInstance = new ChatOpenAI({
-      apiKey,
-      model: "deepseek-v4-flash-free",
-      temperature: 0.2,
-      maxRetries: 2,
-      configuration: {
-        baseURL: "https://opencode.ai/zen/v1",
-      },
-    });
-  }
-
-  return openCodeInstance;
-};
-
-export const getGemini = (modelName = "gemini-2.5-flash") => {
+export const getGemini = (modelName = "gemini-3.6-flash") => {
   const apiKey = (process.env.GEMINI_API_KEY || process.env.GOOGLE_API_KEY || "").trim();
   if (!apiKey) {
     return null;
@@ -111,20 +81,21 @@ export const getGenAIClient = () => {
   return genAIClient;
 };
 
-export const getOpenRouterDeepSeek = () => {
+/**
+ * Primary Model for Coding & Auto Routing: OpenRouter DeepSeek V4 Flash
+ */
+export const getOpenRouterDeepSeekV4 = () => {
   const apiKey = (process.env.OPENROUTER_API_KEY || "").trim();
-
   if (!apiKey) {
     return null;
   }
 
   if (!openRouterDeepSeekInstance || currentOpenRouterKey !== apiKey) {
     currentOpenRouterKey = apiKey;
-
     openRouterDeepSeekInstance = new ChatOpenAI({
       apiKey,
-      model: "deepseek/deepseek-chat",
-      temperature: 0.7,
+      model: "deepseek/deepseek-v4-flash",
+      temperature: 0.2,
       maxTokens: 2500,
       maxRetries: 2,
       configuration: {
@@ -137,41 +108,68 @@ export const getOpenRouterDeepSeek = () => {
 };
 
 /**
- * Returns model instance with 3-tier fallback capabilities.
+ * Fallback Tier 2 Model: OpenRouter Nemotron 3 Ultra Free
+ */
+export const getOpenRouterNemotron3Ultra = () => {
+  const apiKey = (process.env.OPENROUTER_API_KEY || "").trim();
+  if (!apiKey) {
+    return null;
+  }
+
+  if (!openRouterNemotronInstance || currentOpenRouterKey !== apiKey) {
+    currentOpenRouterKey = apiKey;
+    openRouterNemotronInstance = new ChatOpenAI({
+      apiKey,
+      model: "nvidia/nemotron-3-ultra-550b-a55b:free",
+      temperature: 0.2,
+      maxTokens: 2500,
+      maxRetries: 2,
+      configuration: {
+        baseURL: "https://openrouter.ai/api/v1",
+      },
+    });
+  }
+
+  return openRouterNemotronInstance;
+};
+
+/**
+ * Returns requested model instance with specific provider assignments.
  */
 export const getModel = async (type = "chat") => {
   switch (type) {
-    case "chat":
-    case "intent":
-    case "search":
-    case "pdf":
-    case "ppt":
-      return getGroq("llama-3.3-70b-versatile") || getGemini("gemini-2.5-flash") || getOpenCodeCodingModel();
+    case "coding":
+      // Primary: OpenRouter DeepSeek V4 Flash -> Nemotron 3 Ultra -> LangChain Groq
+      return getOpenRouterDeepSeekV4() || getOpenRouterNemotron3Ultra() || getGroq("llama-3.3-70b-versatile");
 
     case "router":
-      return getGroq("llama-3.1-8b-instant") || getGroq("llama-3.3-70b-versatile");
-
-    case "coding":
-      return getGroq("llama-3.3-70b-versatile") || getGemini("gemini-2.5-flash") || getOpenCodeCodingModel();
+      // Primary: OpenRouter DeepSeek V4 Flash -> Groq
+      return getOpenRouterDeepSeekV4() || getGroq("llama-3.3-70b-versatile");
 
     case "imageAnalyzer":
-      return getGemini("gemini-2.5-flash");
+    case "pdfRag":
+      // Image and PDF Analysis: Google Gemini 3.6 Flash
+      return getGemini("gemini-3.6-flash");
 
+    case "pdf":
+    case "ppt":
+    case "search":
+    case "chat":
     default:
-      return getGroq("llama-3.3-70b-versatile") || getGemini("gemini-2.5-flash");
+      return getGroq("llama-3.3-70b-versatile") || getGemini("gemini-3.6-flash");
   }
 };
 
 /**
- * Multi-tier execution pipeline with latency guard:
- * 1. Primary Model
- * 2. Groq Llama 3.3 70B Versatile (~1-2s response)
- * 3. Google Gemini 2.5 Flash / 2.0 Flash (~2s response)
- * 4. Groq Llama 3.1 8B Instant (~0.5s response)
- * 5. OpenRouter DeepSeek
+ * Multi-tier execution pipeline for Coding/Artifact & General Agent Fallbacks:
+ * Primary: Requested Agent Model
+ * Fallback Tier 1: OpenRouter DeepSeek V4 Flash
+ * Fallback Tier 2: OpenRouter Nemotron 3 Ultra Free
+ * Fallback Tier 3: LangChain Groq model
+ * Exhausted: Returns "No limit left. Please try again later or upgrade your plan."
  */
 export const invokeModelWithFallback = async (model, input) => {
-  const invokeWithTimeout = (modelInst, ms = 25000) => {
+  const invokeWithTimeout = (modelInst, ms = 65000) => {
     return Promise.race([
       modelInst.invoke(input),
       new Promise((_, reject) =>
@@ -180,72 +178,61 @@ export const invokeModelWithFallback = async (model, input) => {
     ]);
   };
 
-  // Step 1: Specific requested model
+  // Step 1: Requested Primary Model
   if (model) {
     try {
-      console.log("🤖 [AI Agent Pipeline] Executing Primary Model...");
-      const res = await invokeWithTimeout(model, 25000);
+      console.log("🤖 [AI Agent Pipeline] Executing Requested Primary Model...");
+      const res = await invokeWithTimeout(model, 65000);
       console.log("✅ [AI Agent Pipeline] Primary Model succeeded!");
       return sanitizeResult(res);
     } catch (errPrimary) {
-      console.error("⚠️ [AI Agent Pipeline] Primary Model failed, moving to fast fallbacks:", errPrimary.message || errPrimary);
+      console.error("⚠️ [AI Agent Pipeline] Primary Model failed, moving to fallbacks:", errPrimary.message || errPrimary);
     }
   }
 
-  // Step 2: Groq Llama 3.3 70B (High quality, extremely fast)
+  // Fallback Tier 1: OpenRouter DeepSeek V4 Flash Free
   try {
-    console.log("🔄 [AI Agent Pipeline] Step 2: Executing Groq Llama 3.3 70B...");
+    console.log("🔄 [AI Agent Pipeline] Fallback Tier 1: Executing OpenRouter DeepSeek V4 Flash...");
+    const deepseekV4 = getOpenRouterDeepSeekV4();
+    if (deepseekV4) {
+      const res = await invokeWithTimeout(deepseekV4, 65000);
+      console.log("✅ [AI Agent Pipeline] OpenRouter DeepSeek V4 Flash succeeded!");
+      return sanitizeResult(res);
+    }
+  } catch (errV4) {
+    console.error("⚠️ [AI Agent Pipeline] OpenRouter DeepSeek V4 Flash failed:", errV4.message || errV4);
+  }
+
+  // Fallback Tier 2: OpenRouter Nemotron 3 Ultra Free
+  try {
+    console.log("🔄 [AI Agent Pipeline] Fallback Tier 2: Executing OpenRouter Nemotron 3 Ultra Free...");
+    const nemotron = getOpenRouterNemotron3Ultra();
+    if (nemotron) {
+      const res = await invokeWithTimeout(nemotron, 65000);
+      console.log("✅ [AI Agent Pipeline] OpenRouter Nemotron 3 Ultra Free succeeded!");
+      return sanitizeResult(res);
+    }
+  } catch (errNemo) {
+    console.error("⚠️ [AI Agent Pipeline] OpenRouter Nemotron 3 Ultra Free failed:", errNemo.message || errNemo);
+  }
+
+  // Fallback Tier 3: LangChain Groq Model
+  try {
+    console.log("🔄 [AI Agent Pipeline] Fallback Tier 3: Executing LangChain Groq model...");
     const groqModel = getGroq("llama-3.3-70b-versatile");
     if (groqModel) {
-      const res = await invokeWithTimeout(groqModel, 20000);
-      console.log("✅ [AI Agent Pipeline] Groq Llama 3.3 70B succeeded!");
+      const res = await invokeWithTimeout(groqModel, 65000);
+      console.log("✅ [AI Agent Pipeline] LangChain Groq model succeeded!");
       return sanitizeResult(res);
     }
   } catch (errGroq) {
-    console.error("⚠️ [AI Agent Pipeline] Groq 70B failed:", errGroq.message || errGroq);
+    console.error("⚠️ [AI Agent Pipeline] LangChain Groq model failed:", errGroq.message || errGroq);
   }
 
-  // Step 3: Google Gemini 2.5 Flash
-  try {
-    console.log("🔄 [AI Agent Pipeline] Step 3: Executing Google Gemini 2.5 Flash...");
-    const geminiModel = getGemini("gemini-2.5-flash");
-    if (geminiModel) {
-      const res = await invokeWithTimeout(geminiModel, 25000);
-      console.log("✅ [AI Agent Pipeline] Google Gemini 2.5 Flash succeeded!");
-      return sanitizeResult(res);
-    }
-  } catch (errGemini) {
-    console.error("⚠️ [AI Agent Pipeline] Google Gemini 2.5 Flash failed:", errGemini.message || errGemini);
-  }
-
-  // Step 4: Groq Llama 3.1 8B Instant
-  try {
-    console.log("🔄 [AI Agent Pipeline] Step 4: Executing Groq Llama 3.1 8B Instant...");
-    const groqInstant = getGroq("llama-3.1-8b-instant");
-    if (groqInstant) {
-      const res = await invokeWithTimeout(groqInstant, 15000);
-      console.log("✅ [AI Agent Pipeline] Groq 8B Instant succeeded!");
-      return sanitizeResult(res);
-    }
-  } catch (errGroqInstant) {
-    console.error("⚠️ [AI Agent Pipeline] Groq 8B Instant failed:", errGroqInstant.message || errGroqInstant);
-  }
-
-  // Step 5: OpenRouter DeepSeek
-  try {
-    console.log("🔄 [AI Agent Pipeline] Step 5: Executing OpenRouter DeepSeek...");
-    const openRouterModel = getOpenRouterDeepSeek();
-    if (openRouterModel) {
-      const res = await invokeWithTimeout(openRouterModel, 30000);
-      console.log("✅ [AI Agent Pipeline] OpenRouter DeepSeek succeeded!");
-      return sanitizeResult(res);
-    }
-  } catch (errOpenRouter) {
-    console.error("❌ [AI Agent Pipeline] OpenRouter DeepSeek failed:", errOpenRouter.message || errOpenRouter);
-  }
-
+  // Quota Exceeded / All Models Failed
+  console.error("❌ [AI Agent Pipeline] All AI model fallbacks exhausted or limit reached.");
   return {
-    content: "I am Zuno AI, an advanced AI assistant. How can I help you today?",
+    content: "No limit left. Please try again later or upgrade your plan.",
   };
 };
 
@@ -254,7 +241,7 @@ export const invokeModelWithFallback = async (model, input) => {
  */
 export const generateTitle = async (promptText, aiReplyText = "") => {
   try {
-    const llm = getGroq();
+    const llm = getOpenRouterDeepSeekV4() || getGroq();
     const systemPrompt = `You are a title generator. Generate a 2 to 5 word title summarizing the user's topic. Rules: Output ONLY the title text, do NOT use quotes or end punctuation, format in Title Case (e.g. API Development Overview, Netflix Clone Architecture, React State Management).`;
 
     const messages = [
@@ -303,7 +290,6 @@ export const GFM_FORMATTING_RULES = `
 export const buildCleanLLMMessages = (systemPrompt, history = [], currentPrompt = "") => {
   const clean = systemPrompt ? [new SystemMessage(systemPrompt)] : [];
 
-  // 1. Filter and clean raw history list
   const filtered = (history || [])
     .filter(
       (msg) =>
@@ -318,7 +304,6 @@ export const buildCleanLLMMessages = (systemPrompt, history = [], currentPrompt 
       content: cleanMathDollarSigns(msg.content.trim()),
     }));
 
-  // 2. Ensure current prompt is included at the end if not already present
   if (currentPrompt && currentPrompt.trim()) {
     const trimmed = cleanMathDollarSigns(currentPrompt.trim());
     const last = filtered[filtered.length - 1];
@@ -327,17 +312,14 @@ export const buildCleanLLMMessages = (systemPrompt, history = [], currentPrompt 
     }
   }
 
-  // 3. Strict Alternation Enforcement: Merge consecutive same-role turns
   const alternatingTurns = [];
   for (const item of filtered) {
     if (!item.content) continue;
     if (alternatingTurns.length === 0) {
-      // First turn must be user
       alternatingTurns.push({ role: item.role, content: item.content });
     } else {
       const prev = alternatingTurns[alternatingTurns.length - 1];
       if (prev.role === item.role) {
-        // Merge consecutive same-role contents into one single turn
         prev.content = `${prev.content}\n\n${item.content}`;
       } else {
         alternatingTurns.push({ role: item.role, content: item.content });
@@ -345,12 +327,10 @@ export const buildCleanLLMMessages = (systemPrompt, history = [], currentPrompt 
     }
   }
 
-  // If first turn is assistant, prepend a polite user prompt
   if (alternatingTurns.length > 0 && alternatingTurns[0].role === "assistant") {
     alternatingTurns.unshift({ role: "user", content: "Hello" });
   }
 
-  // Ensure last turn is user
   if (alternatingTurns.length > 0 && alternatingTurns[alternatingTurns.length - 1].role !== "user") {
     if (currentPrompt && currentPrompt.trim()) {
       alternatingTurns.push({ role: "user", content: currentPrompt.trim() });

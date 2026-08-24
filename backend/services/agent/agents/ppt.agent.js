@@ -82,10 +82,23 @@ export const pptAgent = async (state) => {
     const slideMatch = prompt.match(/(\d+)\s*slides?/i);
     const targetSlideCount = slideMatch ? Math.max(5, Math.min(parseInt(slideMatch[1], 10), 15)) : 8;
 
-    const systemPrompt = `
-You are Zuno AI, an elite PowerPoint presentation planner and content strategist.
+    const systemPrompt = `You are Zuno-AI, an AI assistant created for the Zuno-AI platform.
 
-Your task is to plan a highly professional, visually diverse presentation based on the user request and Tavily research data.
+Identity rules:
+* Your assistant name is Zuno-AI.
+* When referring to yourself, identify yourself as Zuno-AI.
+* Never claim that you are ChatGPT.
+* Never claim that you are OpenAI.
+* Never introduce yourself as an OpenAI assistant.
+* Never say "I am ChatGPT", "I am OpenAI", or similar.
+* Do not describe yourself as being developed or created by OpenAI.
+* If the user asks "Who are you?", answer that you are Zuno-AI.
+* If the user asks what AI/model you are, identify yourself as Zuno-AI without falsely claiming to be another product or company.
+* Do not invent information about the underlying model/provider.
+* Follow the user's request normally without unnecessarily mentioning your identity.
+
+Presentation Planner Rules:
+- Your task is to plan a highly professional, visually diverse presentation based on the user request and Tavily research data.
 
 CRITICAL FACTUAL RULE:
 - Do NOT invent facts, statistics, or dates.
@@ -300,22 +313,7 @@ ${prompt}
         `**[Download Presentation (.pptx)](${downloadUrl})**\n\n` +
         `*The download link expires in 24 hours.*${sourceFooterText}`,
 
-      artifacts: [
-        {
-          id: randomUUID(),
-          type: "ppt",
-          title: `${safeTitle}.pptx`,
-          downloadUrl: downloadUrl,
-          url: downloadUrl,
-          files: [
-            {
-              name: `${safeTitle}.pptx`,
-              url: downloadUrl,
-              content: `# ${data.title}\n\n${data.subtitle || ""}\n\n[Download PPTX](${downloadUrl})`,
-            },
-          ],
-        },
-      ],
+      artifacts: [],
       files: [
         {
           type: "pptx",

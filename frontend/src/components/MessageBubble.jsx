@@ -170,8 +170,20 @@ export default function MessageBubble({
   }, [content, images]);
 
   const resolvedArtifacts = useMemo(() => {
+    let sourceArtifacts = [];
     if (Array.isArray(artifacts) && artifacts.length > 0) {
-      return artifacts;
+      sourceArtifacts = artifacts;
+    }
+
+    // Filter out PPT and PDF document artifacts so artifact cards are NEVER rendered for PPT/PDF
+    const codeArtifacts = sourceArtifacts.filter((art) => {
+      const isPpt = art?.type === "ppt" || art?.type === "pptx" || art?.title?.endsWith(".pptx");
+      const isPdf = art?.type === "pdf" || art?.title?.endsWith(".pdf");
+      return !isPpt && !isPdf;
+    });
+
+    if (codeArtifacts.length > 0) {
+      return codeArtifacts;
     }
 
     // Auto-extract code blocks from cleanText into an interactive project artifact if HTML/CSS/JS/Canvas/Game is detected
