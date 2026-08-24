@@ -7,15 +7,16 @@ on:
   workflow_dispatch:
 
 env:
-  AWS_REGION: us-east-1
+  AWS_REGION: ap-south-1
   ACCOUNT_ID: ${{ secrets.AWS_ACCOUNT_ID }}
-  ECS_CLUSTER: backend
+  ECS_CLUSTER: my-ai-cluster
+  ECS_SERVICE: my-ai-service
   S3_BUCKET: myai-demo1
   CLOUDFRONT_DISTRIBUTION_ID: ED6NUYKT6EJ1M
 
 jobs:
   # ============================================================
-  # 1. BUILD & DEPLOY BACKEND MICROSERVICES TO ECS
+  # 1. BUILD & DEPLOY BACKEND MICROSERVICES TO ECS (ap-south-1)
   # ============================================================
   deploy-backend:
     name: Build & Deploy Backend Microservices
@@ -29,17 +30,17 @@ jobs:
         with:
           aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          aws-region: ap-south-1
+          aws-region: ${{ env.AWS_REGION }}
 
-      - name: Log in to Amazon ECR (ap-south-1)
-        id: login-ecr-ap-south-1
+      - name: Log in to Amazon ECR
+        id: login-ecr
         uses: aws-actions/amazon-ecr-login@v2
         with:
           registries: ${{ secrets.AWS_ACCOUNT_ID }}
 
-      - name: Build, Tag & Push Microservice Images (ap-south-1)
+      - name: Build, Tag & Push Microservice Images
         env:
-          REGISTRY: ${{ steps.login-ecr-ap-south-1.outputs.registry }}
+          REGISTRY: ${{ steps.login-ecr.outputs.registry }}
         run: |
           cd backend
           
@@ -63,44 +64,9 @@ jobs:
           docker build -f services/Billing/Dockerfile -t $REGISTRY/ai-billing:latest .
           docker push $REGISTRY/ai-billing:latest
 
-      - name: Force New ECS Deployment (ap-south-1 - Live CloudFront Backend)
+      - name: Force New ECS Deployment (ap-south-1)
         run: |
-          aws ecs update-service --cluster my-ai-cluster --service my-ai-service --force-new-deployment --region ap-south-1 || true
-
-      - name: Log in to Amazon ECR (us-east-1)
-        id: login-ecr-us-east-1
-        uses: aws-actions/amazon-ecr-login@v2
-        with:
-          registries: ${{ secrets.AWS_ACCOUNT_ID }}
-          region: us-east-1
-
-      - name: Tag & Push Microservice Images (us-east-1)
-        env:
-          REGISTRY_SRC: ${{ steps.login-ecr-ap-south-1.outputs.registry }}
-          REGISTRY_DEST: ${{ steps.login-ecr-us-east-1.outputs.registry }}
-        run: |
-          docker tag $REGISTRY_SRC/ai-gateway:latest $REGISTRY_DEST/gateway-service:latest
-          docker push $REGISTRY_DEST/gateway-service:latest
-
-          docker tag $REGISTRY_SRC/ai-auth:latest $REGISTRY_DEST/auth-service:latest
-          docker push $REGISTRY_DEST/auth-service:latest
-
-          docker tag $REGISTRY_SRC/ai-chat:latest $REGISTRY_DEST/chat-service:latest
-          docker push $REGISTRY_DEST/chat-service:latest
-
-          docker tag $REGISTRY_SRC/ai-agent:latest $REGISTRY_DEST/agent-service:latest
-          docker push $REGISTRY_DEST/agent-service:latest
-
-          docker tag $REGISTRY_SRC/ai-billing:latest $REGISTRY_DEST/billing-service:latest
-          docker push $REGISTRY_DEST/billing-service:latest
-
-      - name: Force New ECS Deployments (us-east-1)
-        run: |
-          aws ecs update-service --cluster backend --service gateway-task-service-17zd0afr --force-new-deployment --region us-east-1 || true
-          aws ecs update-service --cluster backend --service auth-service --force-new-deployment --region us-east-1 || true
-          aws ecs update-service --cluster backend --service chat-service --force-new-deployment --region us-east-1 || true
-          aws ecs update-service --cluster backend --service agent-service --force-new-deployment --region us-east-1 || true
-          aws ecs update-service --cluster backend --service billing-service --force-new-deployment --region us-east-1 || true
+          aws ecs update-service --cluster ${{ env.ECS_CLUSTER }} --service ${{ env.ECS_SERVICE }} --force-new-deployment --region ${{ env.AWS_REGION }}
 
   # ============================================================
   # 2. BUILD & DEPLOY FRONTEND TO S3 & CLOUDFRONT
