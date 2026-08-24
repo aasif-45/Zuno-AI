@@ -20,6 +20,7 @@ import {
   Image as ImageIcon,
   Loader2,
   Cpu,
+  RotateCcw,
 } from "lucide-react";
 
 function ImageCard({ imageUrl, altText, onOpenLightbox }) {
