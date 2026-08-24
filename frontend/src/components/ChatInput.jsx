@@ -517,32 +517,6 @@ export default function ChatInput() {
 
       <form onSubmit={handleSubmit} className="mx-auto max-w-4xl">
         <div className="rounded-[22px] sm:rounded-[28px] border border-white/[0.10] bg-[#212124] focus-within:border-white/20 focus-within:bg-[#232327] px-3.5 sm:px-5 py-2.5 sm:py-3.5 shadow-2xl transition-all">
-          {/* Active Speech Recognition Banner */}
-          <AnimatePresence>
-            {isListening && (
-              <motion.div
-                initial={{ opacity: 0, height: 0 }}
-                animate={{ opacity: 1, height: "auto" }}
-                exit={{ opacity: 0, height: 0 }}
-                className="mb-2.5 flex items-center justify-between rounded-xl bg-red-500/10 border border-red-500/20 px-3 py-1.5 text-xs text-red-300 select-none overflow-hidden"
-              >
-                <div className="flex items-center gap-2">
-                  <span className="relative flex h-2 w-2">
-                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
-                    <span className="relative inline-flex rounded-full h-2 w-2 bg-red-500"></span>
-                  </span>
-                  <span className="font-medium tracking-wide">Listening... speak into your microphone</span>
-                </div>
-                <button
-                  type="button"
-                  onClick={stopListening}
-                  className="text-[11px] font-semibold text-red-400 hover:text-white transition cursor-pointer px-1.5 py-0.5 rounded hover:bg-red-500/20"
-                >
-                  Done
-                </button>
-              </motion.div>
-            )}
-          </AnimatePresence>
 
           {/* Speech Error Banner */}
           <AnimatePresence>
