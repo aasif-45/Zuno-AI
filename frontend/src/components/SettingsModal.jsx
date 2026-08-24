@@ -285,7 +285,7 @@ export default function SettingsModal({ isOpen, onClose }) {
             {activeTab === "about" && (
               <div className="space-y-6">
                 <div>
-                  <h3 className="text-base font-semibold text-white">About MY AI</h3>
+                  <h3 className="text-base font-semibold text-white">About Zuno AI</h3>
                   <p className="text-xs text-slate-400 mt-0.5">System specifications & agent architecture</p>
                 </div>
 

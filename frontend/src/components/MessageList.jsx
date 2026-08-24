@@ -136,10 +136,17 @@ export default function MessageList({ onOpenArtifact }) {
       <div className="flex-1 overflow-y-auto bg-[#212121]">
         <div className="flex h-full items-center justify-center px-6">
           <div className="max-w-lg text-center select-none">
-            {/* Title */}
-            <h1 className="mb-3 text-4xl font-semibold tracking-tight text-white font-serif">
-              MY AI
-            </h1>
+            {/* Logo Emblem & Title */}
+            <div className="flex flex-col items-center justify-center mb-3">
+              <img
+                src="/zuno-icon.png"
+                alt="Zuno AI Logo"
+                className="h-16 w-16 mb-2 object-contain drop-shadow-[0_0_20px_rgba(56,189,248,0.45)]"
+              />
+              <h1 className="text-4xl font-semibold tracking-tight text-white font-serif">
+                Zuno AI
+              </h1>
+            </div>
 
             {/* Subtitle */}
             <h2 className="mb-4 text-xl font-medium text-slate-200">

@@ -39,10 +39,10 @@ export const generatePpt = async (data) => {
   const pptx = new pptxgen();
 
   pptx.layout = "LAYOUT_WIDE"; // 13.333 x 7.5 inches (16:9 widescreen)
-  pptx.author = "MY AI";
+  pptx.author = "Zuno AI";
   pptx.subject = data.title || "Presentation";
-  pptx.title = data.title || "MY AI Presentation";
-  pptx.company = "MY AI";
+  pptx.title = data.title || "Zuno AI Presentation";
+  pptx.company = "Zuno AI";
   pptx.lang = "en-US";
 
   // Parse Raw Theme Colors
@@ -79,7 +79,7 @@ export const generatePpt = async (data) => {
   // Define Master Slide Footer & Slide Number
   const sourceText = Array.isArray(data.sources) && data.sources.length > 0
     ? `SOURCES: ${data.sources.join(" · ").toUpperCase()}`
-    : (data.title || "MY AI PRESENTATION").toUpperCase();
+    : (data.title || "ZUNO AI PRESENTATION").toUpperCase();
 
   pptx.defineSlideMaster({
     title: "MASTER_SLIDE",
@@ -107,7 +107,7 @@ export const generatePpt = async (data) => {
         },
       },
       {
-        text: "MY AI",
+        text: "Zuno AI",
         options: {
           x: 11.5,
           y: 7.1,
@@ -355,7 +355,7 @@ function createHeroSlide(pptx, slideData, data, theme) {
   if (!hasImage) {
     // Styled Card Backdrop when no image exists
     addCard(slide, 6.8, 1.2, 5.8, 5.0, theme, { borderColor: theme.primary });
-    slide.addText("MY AI", {
+    slide.addText("Zuno AI", {
       x: 7.3,
       y: 3.0,
       w: 4.8,
@@ -400,7 +400,7 @@ function createHeroSlide(pptx, slideData, data, theme) {
   }
 
   // Bottom Footer
-  slide.addText("Generated with MY AI", {
+  slide.addText("Generated with Zuno AI", {
     x: 0.85,
     y: 6.3,
     w: 4.5,
@@ -1037,7 +1037,7 @@ function createThankYouSlide(pptx, data, theme) {
     valign: "mid",
   });
 
-  slide.addText("Generated with MY AI", {
+  slide.addText("Generated with Zuno AI", {
     x: 2.5,
     y: 4.6,
     w: 8.33,

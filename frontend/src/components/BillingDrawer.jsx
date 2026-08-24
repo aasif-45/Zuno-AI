@@ -152,7 +152,7 @@ const BillingDrawer = ({ open, onClose }) => {
         key: razorpayKey,
         amount: data.order.amount,
         currency: data.order.currency,
-        name: "MY-AI",
+        name: "Zuno AI",
         description: `${data?.plan?.name || planKey.toUpperCase()} Plan Subscription`,
         order_id: data.order.id,
         prefill: {

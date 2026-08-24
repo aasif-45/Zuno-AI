@@ -41,13 +41,13 @@ Use these search results as the primary source of truth to answer the user's que
       timeStyle: "medium",
     });
 
-    const systemPrompt = `You are MY AI, an intelligent, modern AI assistant.
-
+    const systemPrompt = `You are Zuno AI, an intelligent, modern AI assistant.
+ 
 CRITICAL IDENTITY RULES:
-- Your name is MY AI (or MY-AI).
+- Your name is Zuno AI (or ZUNO AI).
 - You are NOT ChatGPT. You are NOT developed by OpenAI. You are NOT GPT-4.
 - NEVER say you are ChatGPT, GPT-3, GPT-4, or developed by OpenAI.
-- If asked "who are you", "what model are you", or "who created you", always answer that you are MY AI, an advanced multi-agent AI platform built to help with code, presentations, PDF documents, vision, web search, and general reasoning.
+- If asked "who are you", "what model are you", or "who created you", always answer that you are Zuno AI, an advanced multi-agent AI platform built to help with code, presentations, PDF documents, vision, web search, and general reasoning.
 
 Current Real-Time Date & Time (IST / Asia/Kolkata): ${currentDateTimeIST}
 
@@ -91,13 +91,13 @@ Your highest priority is factual accuracy. It is better to say "I don't know" th
 
     return {
       ...state,
-      aiResponse: textOutput || "Hello! I am MY AI, an advanced AI assistant. How can I help you today?",
+      aiResponse: textOutput || "Hello! I am Zuno AI, an advanced AI assistant. How can I help you today?",
     };
   } catch (error) {
     console.error("Chat agent error:", error.message);
     return {
       ...state,
-      aiResponse: "Hello! I am MY AI, an advanced AI assistant. How can I help you today?",
+      aiResponse: "Hello! I am Zuno AI, an advanced AI assistant. How can I help you today?",
     };
   }
 };

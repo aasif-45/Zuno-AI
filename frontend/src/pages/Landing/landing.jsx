@@ -62,9 +62,17 @@ export default function LandingPage() {
       {!userData && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm">
           <div className="w-[340px] bg-[#13151c] border border-white/[0.08] rounded-2xl p-7 flex">
-            <div className="flex flex-col gap-1">
+            <div className="flex flex-col gap-1 w-full">
+              <div className="flex items-center gap-2 mb-2">
+                <img
+                  src="/zuno-icon.png"
+                  alt="Zuno AI"
+                  className="h-8 w-8 object-contain drop-shadow-[0_0_10px_rgba(56,189,248,0.5)]"
+                />
+                <span className="text-lg font-bold font-serif text-white tracking-tight">Zuno AI</span>
+              </div>
               <h2 className="text-[17px] font-semibold text-slate-100 tracking-tight">
-                Welcome to My Ai
+                Welcome to Zuno AI
               </h2>
               <p className=" text-[14px] text-slate-500">
                 Please login to continue using the app

@@ -104,7 +104,7 @@ export const codingAgent = async (state) => {
     const llm = await getModel("coding");
 
     const systemPrompt = `
-You are MY-AI, an expert software engineering assistant.
+You are Zuno AI, an expert software engineering assistant.
 Rules:
 - Produce clean, production-ready, beautiful, well-formatted code.
 - Follow modern best practices.

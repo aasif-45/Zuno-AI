@@ -482,7 +482,7 @@ export default function ChatInput() {
               {/* Description */}
               <div className="space-y-3 text-xs sm:text-sm text-gray-300 mb-5 leading-relaxed">
                 <p>
-                  MY-AI uses your microphone to transcribe your voice directly into text in real time so you can speak your prompts effortlessly.
+                  Zuno AI uses your microphone to transcribe your voice directly into text in real time so you can speak your prompts effortlessly.
                 </p>
                 <div className="rounded-xl bg-white/[0.04] border border-white/5 p-3 flex items-start gap-2.5 text-xs text-gray-400">
                   <Shield size={16} className="text-emerald-400 shrink-0 mt-0.5" />
@@ -773,7 +773,7 @@ export default function ChatInput() {
         </div>
 
         <div className="text-center text-[10.5px] sm:text-xs text-gray-500 mt-2 px-2 select-none truncate">
-          MY-AI can make mistakes. Please verify important information.
+          Zuno AI can make mistakes. Please verify important information.
         </div>
       </form>
     </div>

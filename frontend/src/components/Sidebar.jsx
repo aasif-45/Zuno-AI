@@ -257,13 +257,15 @@ export default function Sidebar() {
               {/* Left Logo */}
               <div
                 onClick={handleNewChat}
-                className="flex items-center gap-2 cursor-pointer hover:opacity-80 transition-opacity"
+                className="flex items-center gap-2.5 cursor-pointer hover:opacity-85 transition-all group select-none"
                 title="New chat"
               >
-                <div className="flex h-7 w-7 items-center justify-center rounded-full bg-white/10 text-white">
-                  <Sparkles size={16} />
-                </div>
-                <div className="font-bold font-serif">MY-AI</div>
+                <img
+                  src="/zuno-icon.png"
+                  alt="Zuno AI"
+                  className="h-7 w-7 object-contain drop-shadow-[0_0_8px_rgba(56,189,248,0.4)] group-hover:scale-105 transition-transform"
+                />
+                <span className="font-bold font-serif text-[15px] text-white tracking-tight">Zuno AI</span>
               </div>
 
               {/* Right Action Icons (Search & Close) */}
