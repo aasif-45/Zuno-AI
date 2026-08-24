@@ -265,7 +265,7 @@ export default function Sidebar() {
                   alt="Zuno AI"
                   className="h-7 w-7 object-contain drop-shadow-[0_0_8px_rgba(56,189,248,0.4)] group-hover:scale-105 transition-transform"
                 />
-                <span className="font-bold font-serif text-[15px] text-white tracking-tight">Zuno AI</span>
+                <span className="font-bold font-sans text-[15px] text-white tracking-tight">Zuno AI</span>
               </div>
 
               {/* Right Action Icons (Search & Close) */}

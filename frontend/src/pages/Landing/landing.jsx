@@ -60,39 +60,39 @@ export default function LandingPage() {
       <ChatArea />
 
       {!userData && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm">
-          <div className="w-[340px] bg-[#13151c] border border-white/[0.08] rounded-2xl p-7 flex">
-            <div className="flex flex-col gap-1 w-full">
-              <div className="flex items-center gap-2 mb-2">
-                <img
-                  src="/zuno-icon.png"
-                  alt="Zuno AI"
-                  className="h-8 w-8 object-contain drop-shadow-[0_0_10px_rgba(56,189,248,0.5)]"
-                />
-                <span className="text-lg font-bold font-serif text-white tracking-tight">Zuno AI</span>
-              </div>
-              <h2 className="text-[17px] font-semibold text-slate-100 tracking-tight">
-                Welcome to Zuno AI
-              </h2>
-              <p className=" text-[14px] text-slate-500">
-                Please login to continue using the app
-              </p>
-              {authError && (
-                <div className="mt-2 p-2.5 rounded-lg bg-red-500/10 border border-red-500/20 text-red-400 text-xs leading-relaxed">
-                  {authError}
-                </div>
-              )}
-              <button
-                onClick={googleLogin}
-                disabled={loadingAuth}
-                className="w-full flex items-center justify-center gap-3 py-[8.5px] rounded-xl 
-              text-sm font-medium text-black/90 bg-white hover:bg-gray-300 disabled:opacity-50
-              transition-all duration-150 cursor-pointer mt-3"
-              >
-                <FcGoogle size={20} />
-                {loadingAuth ? "Signing in..." : "Continue with google"}
-              </button>
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-md px-4">
+          <div className="w-full max-w-[360px] bg-[#14161f] border border-white/[0.10] rounded-3xl p-7 flex flex-col items-center text-center shadow-2xl">
+            {/* Logo Emblem & Brand Title */}
+            <div className="flex flex-col items-center gap-3 mb-4">
+              <img
+                src="/zuno-icon.png"
+                alt="Zuno AI"
+                className="h-12 w-12 object-contain drop-shadow-[0_0_16px_rgba(56,189,248,0.5)]"
+              />
+              <span className="text-2xl font-bold font-sans text-white tracking-tight">Zuno AI</span>
             </div>
+
+            {/* Clean Subtitle */}
+            <p className="text-[13.5px] text-slate-400 mb-6 leading-relaxed">
+              Sign in with Google to continue to your workspace
+            </p>
+
+            {authError && (
+              <div className="w-full mb-4 p-2.5 rounded-xl bg-red-500/10 border border-red-500/20 text-red-400 text-xs leading-relaxed text-left">
+                {authError}
+              </div>
+            )}
+
+            <button
+              onClick={googleLogin}
+              disabled={loadingAuth}
+              className="w-full flex items-center justify-center gap-3 py-3 rounded-2xl 
+              text-sm font-semibold text-black bg-white hover:bg-gray-200 disabled:opacity-50
+              transition-all duration-150 cursor-pointer shadow-lg active:scale-[0.98]"
+            >
+              <FcGoogle size={20} />
+              {loadingAuth ? "Signing in..." : "Continue with Google"}
+            </button>
           </div>
         </div>
       )}

@@ -1,4 +1,8 @@
 @import "tailwindcss";
+ 
+body {
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+}
 
 /* Ultra-thin global scrollbar styles */
 ::-webkit-scrollbar {

@@ -143,7 +143,7 @@ export default function MessageList({ onOpenArtifact }) {
                 alt="Zuno AI Logo"
                 className="h-16 w-16 mb-2 object-contain drop-shadow-[0_0_20px_rgba(56,189,248,0.45)]"
               />
-              <h1 className="text-4xl font-semibold tracking-tight text-white font-serif">
+              <h1 className="text-4xl font-bold tracking-tight text-white font-sans">
                 Zuno AI
               </h1>
             </div>
