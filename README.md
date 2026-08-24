@@ -763,8 +763,6 @@ The current version is deployment-ready for demonstration and interview purposes
 
 ---
 
----
-
 ## License
 
 This project is currently marked as ISC in the backend package metadata. Add a dedicated `LICENSE` file if you plan to publish it as open source.

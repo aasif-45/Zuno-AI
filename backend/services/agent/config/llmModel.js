@@ -109,6 +109,8 @@ export const getOpenRouterDeepSeekV4 = () => {
   return openRouterDeepSeekInstance;
 };
 
+export const getOpenRouterDeepSeek = getOpenRouterDeepSeekV4;
+
 /**
  * Fallback Tier 2 Model: OpenRouter Nemotron 3 Ultra Free
  */
