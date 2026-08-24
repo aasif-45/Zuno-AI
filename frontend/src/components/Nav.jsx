@@ -31,16 +31,9 @@ export default function Nav() {
           <PanelLeft size={20} />
         </button>
 
-        <div className="flex items-center gap-2 shrink-0">
-          <img
-            src="/zuno-icon.png"
-            alt="Zuno AI"
-            className="h-6 w-6 object-contain drop-shadow-[0_0_6px_rgba(56,189,248,0.35)]"
-          />
-          <span className="text-base font-semibold text-white tracking-tight">
-            Zuno AI
-          </span>
-        </div>
+        <span className="text-base font-semibold text-white tracking-tight shrink-0">
+          Zuno AI
+        </span>
       </div>
 
       {/* Center: Conversation Title */}
