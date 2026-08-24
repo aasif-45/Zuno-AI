@@ -763,12 +763,6 @@ The current version is deployment-ready for demonstration and interview purposes
 
 ---
 
-## Interview Summary
-
-Use this explanation in interviews:
-
-> Zuno AI is a full-stack multi-agent AI assistant platform. The frontend is built with React, Vite, Redux Toolkit, Tailwind CSS, and Firebase Google login. The backend is split into gateway, auth, chat, agent, and billing services. The gateway validates Redis sessions and proxies requests to internal services. The agent service uses LangGraph to route prompts and uploaded files to specialized agents such as chat, coding, PDF generation, PDF RAG, image analysis, image generation, and PPT generation. MongoDB stores users, conversations, messages, and payments; Redis stores sessions, memory, and rate limits; S3 stores uploaded and generated files; Razorpay handles plan upgrades and credit purchases. I containerized the backend and deployed it on AWS ECS Fargate with ECR, ALB, S3, IAM, and CloudWatch.
-
 ---
 
 ## License
