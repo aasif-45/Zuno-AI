@@ -41,7 +41,7 @@ export default function Sidebar() {
   });
   const [imageError, setImageError] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
-  const [isSearchOpen, setIsSearchOpen] = useState(false);
+  const [showSearch, setShowSearch] = useState(false);
   const [showAccountMenu, setShowAccountMenu] = useState(false);
   const [showBillingDrawer, setShowBillingDrawer] = useState(false);
   const [showProfileModal, setShowProfileModal] = useState(false);
