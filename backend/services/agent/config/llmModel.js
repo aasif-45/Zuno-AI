@@ -20,7 +20,9 @@ let genAIClient = null;
  */
 export const cleanMathDollarSigns = (content = "") => {
   if (typeof content !== "string" || !content) return content;
-  return content
+  // Strip <think>...</think> reasoning blocks (e.g. from Qwen/DeepSeek)
+  let cleaned = content.replace(/<think>[\s\S]*?<\/think>/gi, "").trim();
+  return cleaned
     .replace(/\$O\(([^$]+?)\)\$/gi, "O($1)")
     .replace(/\$([a-zA-Z0-9_\^+-]{1,15})\$/g, "$1");
 };
@@ -139,12 +141,12 @@ export const getOpenRouterNemotron3Ultra = () => {
 export const getModel = async (type = "chat") => {
   switch (type) {
     case "coding":
-      // Primary: OpenRouter DeepSeek V4 Flash -> Nemotron 3 Ultra -> LangChain Groq
-      return getOpenRouterDeepSeekV4() || getOpenRouterNemotron3Ultra() || getGroq("openai/gpt-oss-120b");
+      // Primary: OpenRouter DeepSeek V4 Flash -> Nemotron 3 Ultra -> LangChain Groq (Qwen)
+      return getOpenRouterDeepSeekV4() || getOpenRouterNemotron3Ultra() || getGroq("qwen/qwen3.6-27b");
 
     case "router":
-      // Primary: OpenRouter DeepSeek V4 Flash -> Groq
-      return getOpenRouterDeepSeekV4() || getGroq("openai/gpt-oss-120b");
+      // Primary: OpenRouter DeepSeek V4 Flash -> Groq (Qwen)
+      return getOpenRouterDeepSeekV4() || getGroq("qwen/qwen3.6-27b");
 
     case "imageAnalyzer":
     case "pdfRag":
@@ -156,7 +158,8 @@ export const getModel = async (type = "chat") => {
     case "search":
     case "chat":
     default:
-      return getGroq("openai/gpt-oss-120b") || getGemini("gemini-3.6-flash");
+      // qwen/qwen3.6-27b: neutral, no brand identity, respects system prompt
+      return getGroq("qwen/qwen3.6-27b") || getGemini("gemini-3.6-flash");
   }
 };
 
@@ -216,17 +219,17 @@ export const invokeModelWithFallback = async (model, input) => {
     console.error("⚠️ [AI Agent Pipeline] OpenRouter Nemotron 3 Ultra Free failed:", errNemo.message || errNemo);
   }
 
-  // Fallback Tier 3: LangChain Groq Model
+  // Fallback Tier 3: LangChain Groq Model (Qwen - neutral, no brand identity)
   try {
-    console.log("🔄 [AI Agent Pipeline] Fallback Tier 3: Executing LangChain Groq model...");
-    const groqModel = getGroq("openai/gpt-oss-120b");
+    console.log("🔄 [AI Agent Pipeline] Fallback Tier 3: Executing LangChain Groq (Qwen) model...");
+    const groqModel = getGroq("qwen/qwen3.6-27b");
     if (groqModel) {
       const res = await invokeWithTimeout(groqModel, 65000);
-      console.log("✅ [AI Agent Pipeline] LangChain Groq model succeeded!");
+      console.log("✅ [AI Agent Pipeline] LangChain Groq (Qwen) model succeeded!");
       return sanitizeResult(res);
     }
   } catch (errGroq) {
-    console.error("⚠️ [AI Agent Pipeline] LangChain Groq model failed:", errGroq.message || errGroq);
+    console.error("⚠️ [AI Agent Pipeline] LangChain Groq (Qwen) model failed:", errGroq.message || errGroq);
   }
 
   // Quota Exceeded / All Models Failed
@@ -241,7 +244,7 @@ export const invokeModelWithFallback = async (model, input) => {
  */
 export const generateTitle = async (promptText, aiReplyText = "") => {
   try {
-    const llm = getOpenRouterDeepSeekV4() || getGroq();
+    const llm = getOpenRouterDeepSeekV4() || getGroq("qwen/qwen3.6-27b");
     const systemPrompt = `You are a title generator. Generate a 2 to 5 word title summarizing the user's topic. Rules: Output ONLY the title text, do NOT use quotes or end punctuation, format in Title Case (e.g. API Development Overview, Netflix Clone Architecture, React State Management).`;
 
     const messages = [
