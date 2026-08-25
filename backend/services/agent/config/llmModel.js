@@ -79,8 +79,11 @@ export const getGemini = (modelName = "gemini-3.6-flash") => {
     return null;
   }
 
-  if (!geminiInstance || currentGeminiKey !== apiKey) {
-    currentGeminiKey = apiKey;
+  // Cache per model as well as per key — keying on the API key alone handed
+  // callers a client pinned to whatever model was requested first.
+  const cacheKey = `${apiKey}::${modelName}`;
+  if (!geminiInstance || currentGeminiKey !== cacheKey) {
+    currentGeminiKey = cacheKey;
     geminiInstance = new ChatGoogleGenerativeAI({
       apiKey,
       model: modelName,
@@ -129,6 +132,37 @@ export const getOpenRouterDeepSeekV4 = () => {
 };
 
 export const getOpenRouterDeepSeek = getOpenRouterDeepSeekV4;
+
+/**
+ * Vision-capable fallbacks for image analysis.
+ *
+ * deepseek/deepseek-v4-flash is text-only — sending it an image_url part fails
+ * with "No endpoints found that support image input", so image analysis needs
+ * its own model list rather than reusing the general chat fallbacks.
+ */
+const OPENROUTER_VISION_MODELS = [
+  "google/gemini-3.7-flash",
+  "minimax/minimax-m3:free",
+];
+
+export const getOpenRouterVisionModels = () => {
+  const apiKey = (process.env.OPENROUTER_API_KEY || "").trim();
+  if (!apiKey) return [];
+
+  return OPENROUTER_VISION_MODELS.map((model) => ({
+    model,
+    client: new ChatOpenAI({
+      apiKey,
+      model,
+      temperature: 0.2,
+      maxTokens: 2500,
+      maxRetries: 1,
+      configuration: {
+        baseURL: "https://openrouter.ai/api/v1",
+      },
+    }),
+  }));
+};
 
 /**
  * Fallback Tier 2 Model: OpenRouter Nemotron 3 Ultra Free

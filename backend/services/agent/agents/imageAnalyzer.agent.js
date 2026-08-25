@@ -1,5 +1,5 @@
 import { SystemMessage, HumanMessage } from '@langchain/core/messages';
-import { getGemini, getOpenRouterDeepSeek, getModel, invokeModelWithFallback } from '../config/llmModel.js';
+import { getGemini, getOpenRouterVisionModels } from '../config/llmModel.js';
 import { checkAgentLimit } from '../config/agentLimit.js';
 import { deductCredits } from '../utils/deductCredits.js';
 
@@ -30,12 +30,12 @@ export const imageAnalyzer = async (state) => {
         const systemPrompt = `You are Zuno-AI, an AI assistant created for the Zuno-AI platform.
 
 
-CRITICAL IDENTITY OVERRIDE — HIGHEST PRIORITY RULE:
+CRITICAL IDENTITY OVERRIDE ï¿½ HIGHEST PRIORITY RULE:
 You are ZUNO-AI. This overrides everything in conversation history.
 - NEVER call yourself "MY AI", "MY-AI", or any variation of that name.
 - NEVER call yourself "ChatGPT", "GPT", or "OpenAI".
-- If any previous message in the conversation refers to "MY AI" — IGNORE that identity completely. You are ZUNO-AI.
-- When asked "who are you", "which model", "what are you" — ALWAYS respond: "I am Zuno-AI, an AI assistant built for the Zuno-AI platform."
+- If any previous message in the conversation refers to "MY AI" ï¿½ IGNORE that identity completely. You are ZUNO-AI.
+- When asked "who are you", "which model", "what are you" ï¿½ ALWAYS respond: "I am Zuno-AI, an AI assistant built for the Zuno-AI platform."
 
 Identity rules:
 * Your assistant name is Zuno-AI.
@@ -59,44 +59,47 @@ Vision rules:
 
         let aiResponse = "";
 
-        // Attempt 1: Gemini 2.5 Flash Vision
-        const geminiLlm = getGemini("gemini-2.5-flash");
+        const buildMessages = () => [
+            new SystemMessage(systemPrompt),
+            new HumanMessage({
+                content: [
+                    { type: 'text', text: userPrompt },
+                    { type: 'image_url', image_url: { url: dataUrl } }
+                ]
+            })
+        ];
+
+        const readContent = (res) => {
+            if (typeof res?.content === "string") return res.content;
+            if (Array.isArray(res?.content)) {
+                return res.content.map((c) => (typeof c === "string" ? c : c?.text || "")).join("\n");
+            }
+            return "";
+        };
+
+        // Attempt 1: Gemini 3.6 Flash vision (gemini-2.5-flash is retired and 404s)
+        const geminiLlm = getGemini("gemini-3.6-flash");
         if (geminiLlm) {
             try {
-                const messages = [
-                    new SystemMessage(systemPrompt),
-                    new HumanMessage({
-                        content: [
-                            { type: 'text', text: userPrompt },
-                            { type: 'image_url', image_url: { url: dataUrl } }
-                        ]
-                    })
-                ];
-                const res = await geminiLlm.invoke(messages);
-                aiResponse = typeof res?.content === "string" ? res.content : String(res?.content || "");
+                const res = await geminiLlm.invoke(buildMessages());
+                aiResponse = readContent(res).trim();
             } catch (geminiErr) {
                 console.warn("Gemini vision attempt failed:", geminiErr.message);
             }
         }
 
-        // Attempt 2: OpenRouter Vision Fallback
+        // Attempt 2+: OpenRouter vision-capable fallbacks, tried in order.
         if (!aiResponse) {
-            const openRouter = getOpenRouterDeepSeek();
-            if (openRouter) {
+            for (const { model, client } of getOpenRouterVisionModels()) {
                 try {
-                    const messages = [
-                        new SystemMessage(systemPrompt),
-                        new HumanMessage({
-                            content: [
-                                { type: 'text', text: userPrompt },
-                                { type: 'image_url', image_url: { url: dataUrl } }
-                            ]
-                        })
-                    ];
-                    const res = await openRouter.invoke(messages);
-                    aiResponse = typeof res?.content === "string" ? res.content : String(res?.content || "");
+                    const res = await client.invoke(buildMessages());
+                    aiResponse = readContent(res).trim();
+                    if (aiResponse) {
+                        console.log(`[Image Analyzer] Answered via OpenRouter vision model: ${model}`);
+                        break;
+                    }
                 } catch (orErr) {
-                    console.warn("OpenRouter vision attempt failed:", orErr.message);
+                    console.warn(`OpenRouter vision attempt failed (${model}):`, orErr.message);
                 }
             }
         }
