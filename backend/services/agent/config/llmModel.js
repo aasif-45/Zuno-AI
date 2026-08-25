@@ -32,18 +32,47 @@ export const cleanMathDollarSigns = (content = "") => {
  * Handles any separator between the two tokens (space, non-breaking space,
  * hyphen, underscore, or none at all) so responses can never leak the old brand.
  */
-const MY_AI_PATTERN = /\bMY[\s  _-]*AI\b/gi;
+// The separator class is deliberately permissive, but the surrounding guards
+// are NOT \b: a bare \b let "myai" match inside identifiers such as the S3
+// bucket name "myai-demo1", which rewrote presigned download hosts to a bucket
+// that does not exist and broke every PDF/PPT link with SignatureDoesNotMatch.
+const MY_AI_PATTERN = /(?<![\w-])MY[\s  _-]*AI(?![\w-])/gi;
+
+// Spans that must never be brand-rewritten: URLs carry signed hostnames, and
+// code spans/blocks carry identifiers the user has to copy verbatim.
+const PROTECTED_SPANS = /```[\s\S]*?```|`[^`\n]*`|\bhttps?:\/\/[^\s<>"')\]]+/g;
+
+/**
+ * Applies fn to text while leaving URLs and code spans byte-for-byte intact.
+ */
+// Placeholder delimiter: a character an LLM response will never contain, so a
+// masked span can never be confused with real prose.
+const SPAN_SENTINEL = String.fromCharCode(1);
+const SPAN_PLACEHOLDER = new RegExp(`${SPAN_SENTINEL}(\\d+)${SPAN_SENTINEL}`, "g");
+
+const replaceOutsideProtectedSpans = (text, fn) => {
+  const held = [];
+  const masked = text.replace(PROTECTED_SPANS, (match) => {
+    held.push(match);
+    return `${SPAN_SENTINEL}${held.length - 1}${SPAN_SENTINEL}`;
+  });
+  if (!held.length) return fn(text);
+  return fn(masked).replace(SPAN_PLACEHOLDER, (whole, i) => {
+    const original = held[Number(i)];
+    return original === undefined ? whole : original;
+  });
+};
 
 export const enforceBrandIdentity = (text = "") => {
   if (typeof text !== "string" || !text) return text;
-  return text
+  return replaceOutsideProtectedSpans(text, (safe) => safe
     .replace(new RegExp(`\\bI'?m\\s+${MY_AI_PATTERN.source}`, "gi"), "I'm Zuno-AI")
     .replace(MY_AI_PATTERN, "Zuno-AI")
     // Collapse "Zuno AI" / "Zuno_AI" to the canonical "Zuno-AI" spelling.
     .replace(/\bZuno[\s _]AI\b/g, "Zuno-AI")
     // After rewriting, a denial like "I'm MY AI, not Zuno AI" turns into a
     // self-contradiction — flatten it into a plain identity statement.
-    .replace(/\bZuno-AI,?\s+not\s+Zuno-AI\b/gi, "Zuno-AI");
+    .replace(/\bZuno-AI,?\s+not\s+Zuno-AI\b/gi, "Zuno-AI"));
 };
 
 const sanitizeResult = (res) => {
