@@ -37,3 +37,8 @@ Thumbs.db
 .agents
 .agents/
 .agents/**
+
+# Deployment Scripts
+deploy/
+deploy/**
+

@@ -410,7 +410,7 @@ The project includes ready-to-use PowerShell scripts in `deploy/aws/`:
 ## 👨‍💻 Author & Academic Information
 
 * **Developer:** Aasif
-* **Project Type:** Final Year Capstone / Full-Stack AI Portfolio Project
+* **Project Type:** Full-Stack AI Portfolio Project
 * **GitHub:** [@aasif-45](https://github.com/aasif-45)
 * **Repository:** [Zuno-AI](https://github.com/aasif-45/Zuno-AI)
 
