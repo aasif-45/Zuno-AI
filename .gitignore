@@ -33,4 +33,6 @@ cloudfront-*.json
 Thumbs.db
 .vscode/
 .idea/
+.agents
 .agents/
+.agents/**
