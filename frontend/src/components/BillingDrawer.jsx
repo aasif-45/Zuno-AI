@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "motion/react";
 import { useDispatch, useSelector } from "react-redux";
 import {
@@ -92,6 +92,17 @@ const BillingDrawer = ({ open, onClose }) => {
     (state) => state.user?.userData || state.user
   );
 
+  // Prevent background page scrolling when drawer/modal is open
+  useEffect(() => {
+    if (open) {
+      const originalOverflow = document.body.style.overflow;
+      document.body.style.overflow = "hidden";
+      return () => {
+        document.body.style.overflow = originalOverflow;
+      };
+    }
+  }, [open]);
+
   const activePlan = (userData?.plan || "free").toLowerCase();
 
   const defaultTotal =
@@ -115,7 +126,6 @@ const BillingDrawer = ({ open, onClose }) => {
     const targetTier = PLAN_TIERS[planKey] ?? 0;
 
     if (targetTier <= activeTier) return;
-
 
     try {
       setNotification(null);
@@ -244,41 +254,41 @@ const BillingDrawer = ({ open, onClose }) => {
   return (
     <AnimatePresence>
       {open && (
-        <>
+        <div className="fixed inset-0 z-[100] flex items-end md:items-center justify-center p-0 md:p-4">
           {/* Backdrop */}
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             onClick={onClose}
-            className="fixed inset-0 z-40 bg-black/70 backdrop-blur-sm transition-opacity"
+            className="absolute inset-0 bg-black/75 backdrop-blur-sm transition-opacity"
           />
 
-          {/* Modal Container */}
+          {/* Modal Container: Mobile Bottom-Sheet / Desktop Centered Card */}
           <motion.div
-            initial={{ opacity: 0, scale: 0.96, y: 10 }}
-            animate={{ opacity: 1, scale: 1, y: 0 }}
-            exit={{ opacity: 0, scale: 0.96, y: 10 }}
-            transition={{ duration: 0.2, ease: "easeOut" }}
-            className="fixed left-0 bottom-0 sm:left-1/2 sm:top-1/2 sm:bottom-auto z-50 flex h-[92dvh] sm:h-[90vh] max-h-[720px] w-full sm:w-[92%] max-w-none sm:max-w-[860px] sm:-translate-x-1/2 sm:-translate-y-1/2 flex-col rounded-t-3xl sm:rounded-3xl border border-white/10 bg-[#14161f] text-white shadow-2xl overflow-hidden select-none"
+            initial={{ y: "100%", opacity: 0.9 }}
+            animate={{ y: 0, opacity: 1 }}
+            exit={{ y: "100%", opacity: 0.9 }}
+            transition={{ type: "spring", damping: 28, stiffness: 300 }}
+            className="relative flex h-[92dvh] max-h-[95vh] md:h-auto md:max-h-[760px] w-full md:w-[92%] max-w-none md:max-w-[860px] md:mx-auto flex-col rounded-t-3xl md:rounded-3xl border border-white/10 bg-[#14161f] text-white shadow-2xl overflow-hidden select-none"
           >
-            {/* Top Modal Header */}
-            <div className="flex items-start justify-between gap-3 border-b border-white/10 px-4 sm:px-6 py-3.5 sm:py-4 bg-[#14161f] shrink-0">
+            {/* Fixed Top Modal Header */}
+            <div className="flex items-center justify-between gap-3 border-b border-white/10 px-4 sm:px-6 py-3.5 sm:py-4 bg-[#14161f] shrink-0 z-20">
               <div className="min-w-0">
                 <h2 className="text-lg sm:text-xl font-bold text-white tracking-tight">
                   Upgrade your plan
                 </h2>
-                <p className="text-[11px] sm:text-xs text-[#b4b4b4] mt-0.5">
-                  Get access to faster responses, priority model access, and expanded credit limits.
+                <p className="text-[11px] sm:text-xs text-[#b4b4b4] mt-0.5 truncate">
+                  Get faster responses, priority models, and expanded credits.
                 </p>
               </div>
 
               <button
                 onClick={onClose}
-                className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-white/5 text-[#b4b4b4] transition-colors hover:bg-white/10 hover:text-white cursor-pointer"
+                className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-white/5 text-[#b4b4b4] transition-colors hover:bg-white/10 hover:text-white cursor-pointer touch-manipulation"
                 title="Close"
               >
-                <X size={18} />
+                <X size={20} />
               </button>
             </div>
 
@@ -289,7 +299,7 @@ const BillingDrawer = ({ open, onClose }) => {
                   initial={{ opacity: 0, y: -6 }}
                   animate={{ opacity: 1, y: 0 }}
                   exit={{ opacity: 0, y: -6 }}
-                  className={`mx-4 sm:mx-6 mt-4 flex items-center gap-2.5 rounded-xl border p-3 text-xs ${
+                  className={`mx-4 sm:mx-6 mt-3 flex items-center gap-2.5 rounded-xl border p-3 text-xs ${
                     notification.type === "success"
                       ? "border-[#10a37f]/40 bg-[#10a37f]/10 text-[#10a37f]"
                       : notification.type === "info"
@@ -312,9 +322,9 @@ const BillingDrawer = ({ open, onClose }) => {
             </AnimatePresence>
 
             {/* Current Quota Status Bar */}
-            <div className="mx-4 sm:mx-6 mt-4 flex flex-col gap-2.5 sm:flex-row sm:items-center sm:justify-between rounded-2xl bg-[#1c1e28] border border-white/[0.08] px-4 py-3 text-xs shrink-0">
+            <div className="mx-4 sm:mx-6 mt-3 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between rounded-2xl bg-[#1c1e28] border border-white/[0.08] p-3 sm:px-4 sm:py-3 text-xs shrink-0">
               <div className="flex items-center gap-2 text-slate-200">
-                <Zap size={15} className="text-amber-400" />
+                <Zap size={15} className="text-amber-400 shrink-0" />
                 <span>
                   Current Plan:{" "}
                   <strong className="font-semibold text-white capitalize">
@@ -323,11 +333,11 @@ const BillingDrawer = ({ open, onClose }) => {
                 </span>
               </div>
 
-              <div className="flex items-center gap-3">
-                <span className="text-slate-300 font-medium">
-                  {currentCredits} / {totalCredits} Credits Available
+              <div className="flex items-center justify-between sm:justify-end gap-3">
+                <span className="text-slate-300 font-medium text-xs">
+                  {currentCredits} / {totalCredits} Credits
                 </span>
-                <div className="h-1.5 w-24 shrink-0 overflow-hidden rounded-full bg-black/40">
+                <div className="h-2 w-28 shrink-0 overflow-hidden rounded-full bg-black/40">
                   <div
                     className="h-full rounded-full bg-[#10a37f] transition-all duration-300"
                     style={{ width: `${creditPercentage}%` }}
@@ -336,9 +346,9 @@ const BillingDrawer = ({ open, onClose }) => {
               </div>
             </div>
 
-            {/* ChatGPT 3-Column Plan Comparison Cards */}
-            <div className="flex-1 min-h-0 overflow-y-auto overscroll-contain px-4 sm:px-6 py-5 [scrollbar-width:thin] [scrollbar-color:rgba(255,255,255,0.15)_transparent]">
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4 items-stretch">
+            {/* Scrollable Plan Cards Comparison Grid */}
+            <div className="flex-1 min-h-0 overflow-y-auto overscroll-contain px-4 sm:px-6 py-4 [scrollbar-width:thin] [scrollbar-color:rgba(255,255,255,0.15)_transparent]">
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4 items-stretch pb-2">
                 {PLAN_CARDS.map((plan) => {
                   const PLAN_TIERS = { free: 0, starter: 1, pro: 2 };
                   const activeTier = PLAN_TIERS[activePlan] ?? 0;
@@ -377,7 +387,7 @@ const BillingDrawer = ({ open, onClose }) => {
                           <h3 className="text-lg font-bold text-white">
                             {plan.name}
                           </h3>
-                          <span className="text-xs text-[#b4b4b4]">
+                          <span className="text-xs text-[#b4b4b4] font-medium">
                             {plan.credits}
                           </span>
                         </div>
@@ -396,11 +406,11 @@ const BillingDrawer = ({ open, onClose }) => {
                           {plan.description}
                         </p>
 
-                        {/* Action Button */}
+                        {/* Action Button: Minimum 44px Touch Friendly */}
                         <button
                           disabled={isDisabled}
                           onClick={() => handleUpgrade(plan.key)}
-                          className={`mt-4 flex w-full items-center justify-center gap-2 rounded-xl py-3 sm:py-2.5 text-xs font-semibold transition-all duration-150 ${
+                          className={`mt-4 flex w-full min-h-[44px] items-center justify-center gap-2 rounded-xl py-3 text-xs sm:text-xs font-semibold transition-all duration-150 touch-manipulation ${
                             isCurrent || isLowerTier
                               ? "bg-[#383838] text-[#8e8e93] cursor-not-allowed border border-white/5"
                               : isPro
@@ -410,7 +420,7 @@ const BillingDrawer = ({ open, onClose }) => {
                         >
                           {isLoadingThis ? (
                             <>
-                              <Loader2 size={15} className="animate-spin text-current" />
+                              <Loader2 size={16} className="animate-spin text-current" />
                               <span>Processing...</span>
                             </>
                           ) : isCurrent ? (
@@ -421,7 +431,6 @@ const BillingDrawer = ({ open, onClose }) => {
                             `Upgrade to ${plan.name}`
                           )}
                         </button>
-
 
                         <div className="my-4 h-[1px] bg-white/10" />
 
@@ -443,8 +452,8 @@ const BillingDrawer = ({ open, onClose }) => {
               </div>
             </div>
 
-            {/* Bottom Security Footer */}
-            <div className="shrink-0 border-t border-white/10 bg-[#1e1e1e] px-4 sm:px-6 py-3 sm:py-3.5 pb-[max(0.75rem,env(safe-area-inset-bottom))] sm:pb-3.5 flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between text-[11px] sm:text-xs text-[#b4b4b4]">
+            {/* Sticky Bottom Security Footer */}
+            <div className="shrink-0 border-t border-white/10 bg-[#0f1118] px-4 sm:px-6 py-3 sm:py-3.5 pb-[max(0.85rem,env(safe-area-inset-bottom))] flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between text-[11px] sm:text-xs text-[#b4b4b4] z-20">
               <div className="flex items-center gap-2">
                 <ShieldCheck size={16} className="shrink-0 text-[#10a37f]" />
                 <span>Encrypted 256-bit checkout • Powered by Razorpay</span>
@@ -452,7 +461,7 @@ const BillingDrawer = ({ open, onClose }) => {
               <span className="hidden sm:inline">Cancel or adjust subscription anytime</span>
             </div>
           </motion.div>
-        </>
+        </div>
       )}
     </AnimatePresence>
   );
