@@ -3,6 +3,7 @@ import {
   getModel,
   invokeModelWithFallback,
   buildCleanLLMMessages,
+  isQuotaSentinel,
   PROJECT_MAX_TOKENS,
   DOCUMENT_TIER_TIMEOUT_MS,
 } from "../config/llmModel.js";
@@ -20,7 +21,7 @@ function closeDanglingFence(text = "") {
 
 // Resilient file extractor that handles raw JSON, dirty JSON, markdown code blocks, and full HTML
 function extractArtifactFiles(rawContent, userPrompt) {
-  if (!rawContent) return null;
+  if (!rawContent || isQuotaSentinel(rawContent)) return null;
   rawContent = closeDanglingFence(rawContent);
 
   // 1. Try standard JSON extraction (including markdown ```json ... ```)
@@ -130,14 +131,22 @@ function extractArtifactFiles(rawContent, userPrompt) {
  * with bare code.
  */
 function extractSingleFile(rawContent = "", lang) {
-  if (!rawContent) return "";
+  if (!rawContent || isQuotaSentinel(rawContent)) return "";
   const fenced = closeDanglingFence(rawContent).match(
     new RegExp("```(?:" + lang + ")?\\s*\\n([\\s\\S]*?)```", "i")
   );
   const body = (fenced ? fenced[1] : rawContent).trim();
-  // A refusal or a prose apology is worse than nothing — it would be written
-  // into styles.css and break the preview instead of styling it.
-  if (!body || /^(i\b|sorry|here)/i.test(body) && !/[{;<]/.test(body)) return "";
+  if (!body || isQuotaSentinel(body)) return "";
+
+  // Must actually look like code. A refusal, an apology, or the exhausted-quota
+  // sentence would otherwise be written into styles.css / script.js and then
+  // executed by the preview — that is where "Uncaught SyntaxError: Unexpected
+  // identifier 'limit'" came from.
+  const looksLikeCode = lang === "css"
+    ? /[{;]/.test(body) && /:/.test(body)
+    : /[;{}()=]/.test(body);
+  if (!looksLikeCode) return "";
+
   return body;
 }
 
@@ -330,7 +339,7 @@ Hard requirements:
 - All three blocks are mandatory. Never stop after the HTML.
 - The three files must agree: every id/class referenced in CSS and JS must exist in the HTML.
 - Vanilla only: no frameworks, no build step, no imports, no external CDN.
-- Keep it compact enough to finish all three files in one response — prefer a focused, complete app over an elaborate, truncated one.
+- Take as much space as the app needs — there is no length limit — but never stop before script.js is complete.
 - No prose or explanation outside the code blocks.
 `;
 
@@ -346,6 +355,12 @@ Hard requirements:
         skipTiers: ["nemotron"],
       });
       const rawContent = response?.content || "";
+
+      // Every tier failed. Say so instead of falling through and re-spending the
+      // whole cascade on the markdown path, which would fail the same way.
+      if (isQuotaSentinel(rawContent)) {
+        return { ...state, intent, aiResponse: rawContent, artifacts: [] };
+      }
 
       // Extract files using robust parser
       let extractedFiles = extractArtifactFiles(rawContent, rawPrompt);

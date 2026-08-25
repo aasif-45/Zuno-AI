@@ -1,7 +1,7 @@
 import puppeteer from "puppeteer";
 import { randomUUID } from "crypto";
 
-import { getModel, invokeModelWithFallback, DOCUMENT_MAX_TOKENS, DOCUMENT_TIER_TIMEOUT_MS } from "../config/llmModel.js";
+import { getModel, invokeModelWithFallback, DOCUMENT_MAX_TOKENS, DOCUMENT_TIER_TIMEOUT_MS, isQuotaSentinel } from "../config/llmModel.js";
 import { fetchImageBuffer } from "../utils/fetchImageBuffer.js";
 import { HumanMessage } from "@langchain/core/messages";
 
@@ -75,7 +75,7 @@ Return ONLY valid JSON with this exact schema:
 
 Rules:
 - Create 4-6 comprehensive, well-organized sections.
-- Keep each paragraph under 90 words so the whole JSON object fits in one response.
+- Keep each paragraph focused and readable (roughly 120 words or less).
 - For lists or items (e.g. movies, web series, features), list each entry in "points".
 - Use professional, engaging language.
 - Do NOT use Markdown or HTML tags.
@@ -102,11 +102,11 @@ ${prompt}
 
     // Every model tier failed (or returned nothing usable): report it instead of
     // rendering the provider's error text into an otherwise empty PDF.
-    if (!docData && (!rawContent || /^No limit left\./i.test(rawContent) || rawContent.length < 80)) {
+    if (!docData && (!rawContent || isQuotaSentinel(rawContent) || rawContent.length < 80)) {
       return {
         ...state,
         aiResponse:
-          rawContent && /^No limit left\./i.test(rawContent)
+          isQuotaSentinel(rawContent)
             ? rawContent
             : "I could not generate the document content just now. Please try again in a moment.",
       };

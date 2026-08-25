@@ -76,11 +76,30 @@ export default function Artifact(props) {
     dispatch(setSelectedFile(fileName));
   };
 
-  const handleCopyCode = () => {
+  const handleCopyCode = async () => {
     if (!currentFile?.content) return;
-    navigator.clipboard.writeText(currentFile.content);
-    setCopied(true);
-    setTimeout(() => setCopied(false), 2000);
+    try {
+      // navigator.clipboard only exists in a secure context. The site is served
+      // over plain HTTP from S3, so it is undefined there and the Copy button
+      // threw "Cannot read properties of undefined (reading 'writeText')".
+      if (navigator.clipboard?.writeText) {
+        await navigator.clipboard.writeText(currentFile.content);
+      } else {
+        const ta = document.createElement("textarea");
+        ta.value = currentFile.content;
+        ta.setAttribute("readonly", "");
+        ta.style.position = "fixed";
+        ta.style.opacity = "0";
+        document.body.appendChild(ta);
+        ta.select();
+        document.execCommand("copy");
+        document.body.removeChild(ta);
+      }
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    } catch (err) {
+      console.error("Copy failed:", err);
+    }
   };
 
   const handleDownloadSingleFile = () => {

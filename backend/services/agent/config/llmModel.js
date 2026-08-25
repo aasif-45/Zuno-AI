@@ -78,8 +78,18 @@ export const enforceBrandIdentity = (text = "") => {
     .replace(/\bZuno-AI,?\s+not\s+Zuno-AI\b/gi, "Zuno-AI"));
 };
 
+/**
+ * Returned as the response body when every tier failed. It is user-facing prose,
+ * so callers that write model output into a FILE (artifact, PDF section) must
+ * test for it first — an artifact once shipped a script.js whose entire content
+ * was this sentence, which the preview then tried to execute as JavaScript.
+ */
+export const NO_QUOTA_MESSAGE = "No limit left. Please try again later or upgrade your plan.";
+
+export const isQuotaSentinel = (text = "") => /^\s*No limit left\./i.test(String(text || ""));
+
 const sanitizeResult = (res) => {
-  if (!res) return { content: "No limit left. Please try again later or upgrade your plan." };
+  if (!res) return { content: NO_QUOTA_MESSAGE };
   let text = "";
   if (typeof res.content === "string") {
     text = res.content;
@@ -98,26 +108,22 @@ const sanitizeResult = (res) => {
 };
 
 /**
- * Token budgets. Chat answers fit comfortably in 2500, but a structured
- * document is emitted as one JSON object: if the budget cuts it off mid-object
- * the JSON is unparseable and the PDF/PPT falls back to dumping raw text.
+ * Token budgets: deliberately UNSET (null = do not send max_tokens at all).
  *
- * 4000 is a ceiling the current provider tiers actually accept — 8000 is
- * rejected outright by OpenRouter on a low credit balance ("can only afford
- * N tokens") and exceeds the Groq free-tier 8000 tokens/minute budget once the
- * prompt is counted.
+ * Every cap we tried was worse than no cap. 2500 truncated projects after the
+ * HTML block and cut documents off mid-JSON. Raising it to 4000 made OpenRouter
+ * reject the call outright on a low credit balance — "You requested up to 4000
+ * tokens, but can only afford 395" — which pushed every request down the
+ * fallback chain, and 8000 also tripped the Groq free-tier TPM ceiling.
+ *
+ * With no max_tokens the provider applies its own model default: nothing is
+ * pre-rejected for a budget we never needed to state, and responses run to
+ * their natural end. The names are kept so callers can express "this is a big
+ * output" without hard-coding a number here.
  */
-export const CHAT_MAX_TOKENS = 2500;
-export const DOCUMENT_MAX_TOKENS = 4000;
-
-/**
- * A generated web project is three files (HTML + CSS + JS) in one response, so
- * it is the largest single output we ask for. At the chat budget the response
- * was cut off after the HTML block, and the artifact shipped as a lone
- * index.html linking a styles.css and script.js that were never generated —
- * the live preview rendered unstyled, inert markup.
- */
-export const PROJECT_MAX_TOKENS = 4000;
+export const CHAT_MAX_TOKENS = null;
+export const DOCUMENT_MAX_TOKENS = null;
+export const PROJECT_MAX_TOKENS = null;
 
 /**
  * Per-tier invocation ceiling. Four tiers at 65s each could push a single
@@ -129,16 +135,36 @@ export const PROJECT_MAX_TOKENS = 4000;
 export const TIER_TIMEOUT_MS = 25000;
 
 /**
- * Documents emit ~4000 tokens in one object, so they legitimately need longer
- * than a chat reply — but still bounded so the full cascade stays under the ALB.
+ * Documents and projects are the longest outputs and are now uncapped, so they
+ * need more wall-clock than a chat reply — still bounded so the full cascade
+ * stays under the ALB idle timeout.
  */
-export const DOCUMENT_TIER_TIMEOUT_MS = 45000;
+export const DOCUMENT_TIER_TIMEOUT_MS = 60000;
+
+// max_tokens is omitted entirely unless a caller asks for a specific ceiling.
+const tokenLimit = (maxTokens) =>
+  Number.isFinite(maxTokens) && maxTokens > 0 ? { maxTokens } : {};
+
+/**
+ * Groq is the exception to the "send no limit" rule: with max_tokens omitted it
+ * applies a 2048-token default — LOWER than the cap we removed — and qwen3.6
+ * spends a chunk of that on its <think> preamble, so script.js arrived as bare
+ * variable declarations with no functions or listeners (measured:
+ * finish_reason "length" at exactly 2048 output tokens).
+ *
+ * The ceiling is what the free tier can actually pay for, not a quality choice:
+ * Groq counts prompt + requested completion against 8000 tokens/minute, and a
+ * project prompt is ~900, so 6000 got rejected with 429 "Limit 8000 ...
+ * Requested 6918" as soon as two calls landed in the same minute. 4000 leaves
+ * room for the follow-up repair call.
+ */
+const GROQ_MAX_OUTPUT_TOKENS = 4000;
 
 export const getGroq = (modelName = "openai/gpt-oss-120b", maxTokens = CHAT_MAX_TOKENS) => {
   return new ChatGroq({
     apiKey: process.env.GROQ_API_KEY || "",
     model: modelName,
-    maxTokens,
+    ...tokenLimit(Number.isFinite(maxTokens) && maxTokens > 0 ? maxTokens : GROQ_MAX_OUTPUT_TOKENS),
     maxRetries: 2,
   });
 };
@@ -193,7 +219,7 @@ export const getOpenRouterDeepSeekV4 = (maxTokens = CHAT_MAX_TOKENS) => {
       apiKey,
       model: "deepseek/deepseek-v4-flash",
       temperature: 0.2,
-      maxTokens,
+      ...tokenLimit(maxTokens),
       maxRetries: 2,
       configuration: {
         baseURL: "https://openrouter.ai/api/v1",
@@ -228,7 +254,6 @@ export const getOpenRouterVisionModels = () => {
       apiKey,
       model,
       temperature: 0.2,
-      maxTokens: 2500,
       maxRetries: 1,
       configuration: {
         baseURL: "https://openrouter.ai/api/v1",
@@ -253,7 +278,7 @@ export const getOpenRouterNemotron3Ultra = (maxTokens = CHAT_MAX_TOKENS) => {
       apiKey,
       model: "nvidia/nemotron-3-ultra-550b-a55b:free",
       temperature: 0.2,
-      maxTokens,
+      ...tokenLimit(maxTokens),
       maxRetries: 2,
       configuration: {
         baseURL: "https://openrouter.ai/api/v1",
@@ -384,7 +409,7 @@ export const invokeModelWithFallback = async (model, input, options = {}) => {
   // Quota Exceeded / All Models Failed
   console.error("❌ [AI Agent Pipeline] All AI model fallbacks exhausted or limit reached.");
   return {
-    content: "No limit left. Please try again later or upgrade your plan.",
+    content: NO_QUOTA_MESSAGE,
   };
 };
 
