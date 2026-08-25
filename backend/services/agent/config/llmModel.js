@@ -13,6 +13,9 @@ let currentGeminiKey = null;
 let openRouterDeepSeekInstance = null;
 let openRouterNemotronInstance = null;
 let currentOpenRouterKey = null;
+// Separate cache key per client: both used to share currentOpenRouterKey, so
+// building one silently invalidated the other on every alternating call.
+let currentNemotronKey = null;
 let genAIClient = null;
 
 /**
@@ -94,10 +97,24 @@ const sanitizeResult = (res) => {
   return res;
 };
 
-export const getGroq = (modelName = "openai/gpt-oss-120b") => {
+/**
+ * Token budgets. Chat answers fit comfortably in 2500, but a structured
+ * document is emitted as one JSON object: if the budget cuts it off mid-object
+ * the JSON is unparseable and the PDF/PPT falls back to dumping raw text.
+ *
+ * 4000 is a ceiling the current provider tiers actually accept — 8000 is
+ * rejected outright by OpenRouter on a low credit balance ("can only afford
+ * N tokens") and exceeds the Groq free-tier 8000 tokens/minute budget once the
+ * prompt is counted.
+ */
+export const CHAT_MAX_TOKENS = 2500;
+export const DOCUMENT_MAX_TOKENS = 4000;
+
+export const getGroq = (modelName = "openai/gpt-oss-120b", maxTokens = CHAT_MAX_TOKENS) => {
   return new ChatGroq({
     apiKey: process.env.GROQ_API_KEY || "",
     model: modelName,
+    maxTokens,
     maxRetries: 2,
   });
 };
@@ -137,19 +154,22 @@ export const getGenAIClient = () => {
 /**
  * Primary Model for Coding & Auto Routing: OpenRouter DeepSeek V4 Flash
  */
-export const getOpenRouterDeepSeekV4 = () => {
+export const getOpenRouterDeepSeekV4 = (maxTokens = CHAT_MAX_TOKENS) => {
   const apiKey = (process.env.OPENROUTER_API_KEY || "").trim();
   if (!apiKey) {
     return null;
   }
 
-  if (!openRouterDeepSeekInstance || currentOpenRouterKey !== apiKey) {
-    currentOpenRouterKey = apiKey;
+  // Cache per token budget too — document generation needs a larger budget
+  // than chat, and a key-only cache handed it whichever client was built first.
+  const cacheKey = `${apiKey}::${maxTokens}`;
+  if (!openRouterDeepSeekInstance || currentOpenRouterKey !== cacheKey) {
+    currentOpenRouterKey = cacheKey;
     openRouterDeepSeekInstance = new ChatOpenAI({
       apiKey,
       model: "deepseek/deepseek-v4-flash",
       temperature: 0.2,
-      maxTokens: 2500,
+      maxTokens,
       maxRetries: 2,
       configuration: {
         baseURL: "https://openrouter.ai/api/v1",
@@ -196,19 +216,20 @@ export const getOpenRouterVisionModels = () => {
 /**
  * Fallback Tier 2 Model: OpenRouter Nemotron 3 Ultra Free
  */
-export const getOpenRouterNemotron3Ultra = () => {
+export const getOpenRouterNemotron3Ultra = (maxTokens = CHAT_MAX_TOKENS) => {
   const apiKey = (process.env.OPENROUTER_API_KEY || "").trim();
   if (!apiKey) {
     return null;
   }
 
-  if (!openRouterNemotronInstance || currentOpenRouterKey !== apiKey) {
-    currentOpenRouterKey = apiKey;
+  const cacheKey = `${apiKey}::${maxTokens}`;
+  if (!openRouterNemotronInstance || currentNemotronKey !== cacheKey) {
+    currentNemotronKey = cacheKey;
     openRouterNemotronInstance = new ChatOpenAI({
       apiKey,
       model: "nvidia/nemotron-3-ultra-550b-a55b:free",
       temperature: 0.2,
-      maxTokens: 2500,
+      maxTokens,
       maxRetries: 2,
       configuration: {
         baseURL: "https://openrouter.ai/api/v1",
@@ -239,6 +260,10 @@ export const getModel = async (type = "chat") => {
 
     case "pdf":
     case "ppt":
+      // Document generation returns one large JSON object — give it room so the
+      // response is not truncated mid-object.
+      return getOpenRouterDeepSeekV4(DOCUMENT_MAX_TOKENS) || getGemini("gemini-3.6-flash");
+
     case "search":
     case "chat":
     default:
@@ -256,7 +281,10 @@ export const getModel = async (type = "chat") => {
  * Fallback Tier 3: LangChain Groq model
  * Exhausted: Returns "No limit left. Please try again later or upgrade your plan."
  */
-export const invokeModelWithFallback = async (model, input) => {
+export const invokeModelWithFallback = async (model, input, options = {}) => {
+  // Fallback tiers must honour the caller's token budget: a document request
+  // that fell through to a 2500-token fallback came back truncated.
+  const maxTokens = options.maxTokens || CHAT_MAX_TOKENS;
   const invokeWithTimeout = (modelInst, ms = 65000) => {
     return Promise.race([
       modelInst.invoke(input),
@@ -281,7 +309,7 @@ export const invokeModelWithFallback = async (model, input) => {
   // Fallback Tier 1: OpenRouter DeepSeek V4 Flash Free
   try {
     console.log("🔄 [AI Agent Pipeline] Fallback Tier 1: Executing OpenRouter DeepSeek V4 Flash...");
-    const deepseekV4 = getOpenRouterDeepSeekV4();
+    const deepseekV4 = getOpenRouterDeepSeekV4(maxTokens);
     if (deepseekV4) {
       const res = await invokeWithTimeout(deepseekV4, 65000);
       console.log("✅ [AI Agent Pipeline] OpenRouter DeepSeek V4 Flash succeeded!");
@@ -294,7 +322,7 @@ export const invokeModelWithFallback = async (model, input) => {
   // Fallback Tier 2: OpenRouter Nemotron 3 Ultra Free
   try {
     console.log("🔄 [AI Agent Pipeline] Fallback Tier 2: Executing OpenRouter Nemotron 3 Ultra Free...");
-    const nemotron = getOpenRouterNemotron3Ultra();
+    const nemotron = getOpenRouterNemotron3Ultra(maxTokens);
     if (nemotron) {
       const res = await invokeWithTimeout(nemotron, 65000);
       console.log("✅ [AI Agent Pipeline] OpenRouter Nemotron 3 Ultra Free succeeded!");
@@ -307,7 +335,7 @@ export const invokeModelWithFallback = async (model, input) => {
   // Fallback Tier 3: LangChain Groq Model (Qwen - neutral, no brand identity)
   try {
     console.log("🔄 [AI Agent Pipeline] Fallback Tier 3: Executing LangChain Groq (Qwen) model...");
-    const groqModel = getGroq("qwen/qwen3.6-27b");
+    const groqModel = getGroq("qwen/qwen3.6-27b", maxTokens);
     if (groqModel) {
       const res = await invokeWithTimeout(groqModel, 65000);
       console.log("✅ [AI Agent Pipeline] LangChain Groq (Qwen) model succeeded!");

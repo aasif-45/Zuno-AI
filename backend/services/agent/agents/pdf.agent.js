@@ -1,7 +1,7 @@
 import puppeteer from "puppeteer";
 import { randomUUID } from "crypto";
 
-import { getModel, invokeModelWithFallback } from "../config/llmModel.js";
+import { getModel, invokeModelWithFallback, DOCUMENT_MAX_TOKENS } from "../config/llmModel.js";
 import { fetchImageBuffer } from "../utils/fetchImageBuffer.js";
 import { HumanMessage } from "@langchain/core/messages";
 
@@ -33,12 +33,12 @@ export const pdfAgent = async (state) => {
 You are Zuno-AI, an AI assistant created for the Zuno-AI platform.
 
 
-CRITICAL IDENTITY OVERRIDE — HIGHEST PRIORITY RULE:
+CRITICAL IDENTITY OVERRIDE ï¿½ HIGHEST PRIORITY RULE:
 You are ZUNO-AI. This overrides everything in conversation history.
 - NEVER call yourself "MY AI", "MY-AI", or any variation of that name.
 - NEVER call yourself "ChatGPT", "GPT", or "OpenAI".
-- If any previous message in the conversation refers to "MY AI" — IGNORE that identity completely. You are ZUNO-AI.
-- When asked "who are you", "which model", "what are you" — ALWAYS respond: "I am Zuno-AI, an AI assistant built for the Zuno-AI platform."
+- If any previous message in the conversation refers to "MY AI" ï¿½ IGNORE that identity completely. You are ZUNO-AI.
+- When asked "who are you", "which model", "what are you" ï¿½ ALWAYS respond: "I am Zuno-AI, an AI assistant built for the Zuno-AI platform."
 
 Identity rules:
 * Your assistant name is Zuno-AI.
@@ -74,7 +74,8 @@ Return ONLY valid JSON with this exact schema:
 }
 
 Rules:
-- Create 4-8 comprehensive, well-organized sections.
+- Create 4-6 comprehensive, well-organized sections.
+- Keep each paragraph under 90 words so the whole JSON object fits in one response.
 - For lists or items (e.g. movies, web series, features), list each entry in "points".
 - Use professional, engaging language.
 - Do NOT use Markdown or HTML tags.
@@ -83,7 +84,7 @@ Rules:
 User request:
 ${prompt}
 `),
-    ]);
+    ], { maxTokens: DOCUMENT_MAX_TOKENS });
 
     const rawContent =
       typeof response?.content === "string"
@@ -92,6 +93,18 @@ ${prompt}
 
     const docData = extractJSON(rawContent);
     const docTitle = docData?.title || prompt;
+
+    // Every model tier failed (or returned nothing usable): report it instead of
+    // rendering the provider's error text into an otherwise empty PDF.
+    if (!docData && (!rawContent || /^No limit left\./i.test(rawContent) || rawContent.length < 80)) {
+      return {
+        ...state,
+        aiResponse:
+          rawContent && /^No limit left\./i.test(rawContent)
+            ? rawContent
+            : "I could not generate the document content just now. Please try again in a moment.",
+      };
+    }
 
     // Fetch images ONLY if user explicitly asked for images in prompt
     if (userRequestedImages && docData && Array.isArray(docData.sections)) {
@@ -220,12 +233,127 @@ function extractJSON(text = "") {
     }
   }
 
+  // 3. Truncated response (hit the token ceiling mid-object): salvage the
+  //    sections that did arrive complete instead of rendering raw JSON.
+  if (firstBrace !== -1) {
+    const repaired = repairTruncatedJSON(candidate.substring(firstBrace));
+    if (repaired) {
+      console.warn("[PDF Agent] Recovered a truncated JSON document.");
+      return repaired;
+    }
+  }
+
   return null;
+}
+
+/**
+ * Closes an object that was cut off mid-stream: drops the trailing incomplete
+ * fragment, then balances the still-open brackets. Returns null if the result
+ * is not usable as a document.
+ */
+function repairTruncatedJSON(text = "") {
+  let inString = false;
+  let escaped = false;
+  const stack = [];
+  // Last index where the document was still syntactically whole. Only depths at
+  // or above the sections array count: cutting inside a half-written section
+  // would leave a dangling key such as {"heading":"x","points"}.
+  let safeEnd = -1;
+
+  for (let i = 0; i < text.length; i++) {
+    const ch = text[i];
+
+    if (escaped) { escaped = false; continue; }
+    if (ch === "\\") { escaped = true; continue; }
+
+    if (inString) {
+      if (ch === '"') inString = false;
+      continue;
+    }
+
+    if (ch === '"') { inString = true; continue; }
+    if (ch === "{" || ch === "[") { stack.push(ch); continue; }
+    if (ch === "}" || ch === "]") {
+      stack.pop();
+      if (stack.length <= 2) safeEnd = i + 1;
+      continue;
+    }
+    if (ch === "," && stack.length <= 2) safeEnd = i;
+  }
+
+  if (safeEnd <= 0) return null;
+
+  let out = text.slice(0, safeEnd).replace(/,\s*$/, "");
+
+  // Re-scan the truncated slice to learn which brackets are still open.
+  const open = [];
+  inString = false;
+  escaped = false;
+  for (const ch of out) {
+    if (escaped) { escaped = false; continue; }
+    if (ch === "\\") { escaped = true; continue; }
+    if (inString) { if (ch === '"') inString = false; continue; }
+    if (ch === '"') { inString = true; continue; }
+    if (ch === "{" || ch === "[") open.push(ch);
+    else if (ch === "}" || ch === "]") open.pop();
+  }
+  while (open.length) out += open.pop() === "{" ? "}" : "]";
+
+  try {
+    const parsed = JSON.parse(out);
+    const sections = Array.isArray(parsed?.sections) ? parsed.sections : [];
+    // A title with no body is worse than the raw-text fallback.
+    return sections.length ? parsed : null;
+  } catch {
+    return null;
+  }
 }
 
 // =====================================
 // EXECUTIVE PDF HTML TEMPLATE
 // =====================================
+
+/**
+ * Turns unparseable JSON-ish output into readable lines: keys become headings,
+ * string values become paragraphs or bullets, punctuation is dropped.
+ */
+function stripJSONScaffolding(text = "") {
+  if (!/^[\sï»¿]*[{[]/.test(text.trim()) && !/^\s*"?\w+"?\s*:/m.test(text)) {
+    return text;
+  }
+
+  const lines = [];
+  for (const raw of text.split("\n")) {
+    let line = raw.trim();
+    if (!line || /^[{}[\],]+$/.test(line)) continue;
+
+    line = line.replace(/,\s*$/, "");
+
+    const kv = line.match(/^"([^"]+)"\s*:\s*(.*)$/);
+    if (kv) {
+      const [, key, rest] = kv;
+      const value = rest.replace(/^"|"$/g, "").replace(/[[{]\s*$/, "").trim();
+      if (/^(title|heading|subtitle)$/i.test(key)) {
+        if (value) lines.push(`${value}:`);
+        continue;
+      }
+      // A whole array on one line: emit its entries as separate lines.
+      if (/^\[.*\]$/.test(value)) {
+        const items = value.slice(1, -1).match(/"(?:[^"\\]|\\.)*"/g) || [];
+        for (const item of items) {
+          lines.push(/^points?$/i.test(key) ? `- ${item.slice(1, -1)}` : item.slice(1, -1));
+        }
+        continue;
+      }
+      if (value) lines.push(value);
+      continue;
+    }
+
+    lines.push(`- ${line.replace(/^"|"$/g, "")}`);
+  }
+
+  return lines.join("\n");
+}
 
 function createPDFHTML(title, docData, rawContent) {
   let bodyHTML = "";
@@ -265,8 +393,10 @@ function createPDFHTML(title, docData, rawContent) {
       bodyHTML += `</div>`;
     });
   } else {
-    // Fallback for unstructured output
-    bodyHTML = `<div class="section-card">` + rawContent
+    // Fallback for unstructured output. If the model returned JSON we could not
+    // parse, strip the scaffolding rather than printing braces and quotes into
+    // the document.
+    bodyHTML = `<div class="section-card">` + stripJSONScaffolding(rawContent)
       .split("\n")
       .map((line) => line.trim())
       .filter(Boolean)
