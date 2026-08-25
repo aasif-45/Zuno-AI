@@ -1,768 +1,421 @@
-# Zuno AI - Multi-Agent AI Assistant Platform
+# 🤖 Zuno AI — Multi-Agent AI Assistant Platform
 
-Zuno AI is a full-stack AI assistant platform that combines Google authentication, persistent conversations, multi-agent AI routing, file upload workflows, document generation, image analysis, and credit-based billing in one workspace.
+<div align="center">
 
-The project is built with a React/Vite frontend and a Node.js microservice-style backend. The backend is containerized with Docker and deployed on AWS using ECR, ECS Fargate, an Application Load Balancer, S3 static website hosting, S3 private file storage, IAM roles, and CloudWatch logs.
+[![React 19](https://img.shields.io/badge/Frontend-React%2019%20%7C%20Vite-61DAFB?logo=react&logoColor=black)](https://react.dev/)
+[![Node.js](https://img.shields.io/badge/Backend-Node.js%20%7C%20Express-339933?logo=node.js&logoColor=white)](https://nodejs.org/)
+[![Docker](https://img.shields.io/badge/Containers-Docker%20%7C%20Compose-2496ED?logo=docker&logoColor=white)](https://www.docker.com/)
+[![AWS ECS Fargate](https://img.shields.io/badge/Cloud-AWS%20ECS%20Fargate%20%7C%20S3%20%7C%20ALB-FF9900?logo=amazon-aws&logoColor=white)](https://aws.amazon.com/)
+[![MongoDB](https://img.shields.io/badge/Database-MongoDB%20Atlas-47A248?logo=mongodb&logoColor=white)](https://www.mongodb.com/)
+[![Redis](https://img.shields.io/badge/Cache-Redis%20Sessions-DC382D?logo=redis&logoColor=white)](https://redis.io/)
+[![LangGraph](https://img.shields.io/badge/AI%20Framework-LangGraph%20StateGraph-1C3C3C?logo=langchain&logoColor=white)](https://langchain-ai.github.io/langgraph/)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
----
+**A full-stack, cloud-native Multi-Agent AI productivity workspace featuring intelligent agent routing, live coding artifacts, document generation (PDF/PPT), vision & OCR, and credit-based subscription billing.**
 
-## Table of Contents
+[🌐 Live Demo](http://myai-demo1.s3-website.ap-south-1.amazonaws.com) • [📁 GitHub Repository](https://github.com/aasif-45/Zuno-AI) • [📖 Architecture](#-system-architecture) • [🚀 Quickstart](#-step-by-step-local-setup)
 
-- [Overview](#overview)
-- [Core Features](#core-features)
-- [Architecture](#architecture)
-- [Backend Services](#backend-services)
-- [AI Agent System](#ai-agent-system)
-- [Authentication and Sessions](#authentication-and-sessions)
-- [Billing and Credits](#billing-and-credits)
-- [Data Model](#data-model)
-- [File Storage](#file-storage)
-- [Tech Stack](#tech-stack)
-- [Repository Structure](#repository-structure)
-- [Environment Variables](#environment-variables)
-- [Local Development](#local-development)
-- [AWS Deployment](#aws-deployment)
-- [Important Engineering Decisions](#important-engineering-decisions)
-- [Known Improvements](#known-improvements)
-- [Interview Summary](#interview-summary)
+</div>
 
 ---
 
-## Overview
+## 📌 Project Overview
 
-Most AI chat applications only support text prompts. Zuno AI extends that idea into a practical AI workspace where users can:
+**Zuno AI** is a capstone-grade full-stack artificial intelligence application designed to overcome the limitations of single-prompt chatbots. Rather than routing all user requests through a single generic model, Zuno AI employs a **Microservices-based Multi-Agent Orchestration Architecture**.
 
-- Sign in with Google.
-- Create and continue conversations.
-- Route prompts automatically to the correct AI agent.
-- Ask general questions.
-- Generate and debug code.
-- Generate PDFs and PowerPoint presentations.
-- Upload PDFs for document analysis.
-- Upload images for multimodal analysis.
-- Generate images.
-- Store generated files in S3.
-- Upgrade plans using Razorpay.
-- Spend AI credits based on the agent used.
+The system dynamically analyzes user intent, file attachments, and prompt context to route tasks to specialized agent nodes—such as interactive coding with live sandbox execution, presentation generation, PDF synthesis and semantic analysis, web search with Tavily, image generation, and multimodal vision analysis.
 
-The main goal of the project is to demonstrate a production-style full-stack architecture around AI workflows, not just a single chat API call.
+### 🌟 Key Highlights
+* **Dynamic Multi-Agent Routing:** Blends rule-based deterministic matching with an LLM classifier powered by LangGraph StateGraph.
+* **Interactive Code & Document Artifacts:** In-browser live Monaco editor, code execution previews, and downloadable PPTX/PDF files.
+* **Cloud-Native AWS Deployment:** Production-grade containerization with Docker, AWS ECR, ECS Fargate, Application Load Balancers (ALB), and S3 static & private asset buckets.
+* **Secure Auth & Session Caching:** Firebase Google OAuth2 verified via Firebase Admin SDK with Redis-backed session management.
+* **Monetization & Quota Engine:** Integrated Razorpay checkout with webhook verification, plan upgrades (Free, Starter, Pro), and atomic credit tracking.
+* **Mobile-First Responsive UI:** Designed with a modern, ChatGPT-style bottom-sheet drawer experience for mobile smartphone screens (320px–430px+).
 
 ---
 
-## Core Features
+## 🎯 Problem Statement & Motivation
 
-### Multi-Agent AI Workspace
+Traditional conversational AI interfaces suffer from several common shortcomings:
+1. **Lack of Specialization:** A single LLM prompt struggles to handle specialized formatting like generating valid PowerPoint slides, styling complex PDFs, or running web search simultaneously.
+2. **Missing State & Context Isolation:** Monolithic chat applications easily mix conversational history with resource-heavy file parsing and payment logic.
+3. **High Latency & Token Costs:** Running heavy reasoning models on simple chat prompts wastes API credits and degrades user experience.
+4. **Poor Mobile Usability:** Many desktop AI web apps simply scale down UI elements rather than adopting native mobile interaction patterns.
 
-Zuno AI supports multiple specialized AI modes:
-
-- Auto routing
-- General chat
-- Web/search style responses
-- Coding assistance
-- PDF generation
-- PDF upload and analysis
-- PPT generation
-- Image generation
-- Image upload and analysis
-
-### Persistent Conversations
-
-Users can create conversations, store messages, reload history, rename conversations using generated titles, and delete conversations.
-
-### Google Authentication
-
-The frontend uses Firebase Google login. The backend verifies Firebase ID tokens using Firebase Admin, creates/fetches the user in MongoDB, and creates a Redis-backed server session.
-
-### Credit-Based Billing
-
-The platform includes a simple credit system:
-
-- Free plan: 100 credits
-- Starter plan: 500 credits
-- Pro plan: 1000 credits
-
-Razorpay is used for order creation and secure payment verification.
-
-### AWS Deployment
-
-The backend is deployed as Docker containers on ECS Fargate. The frontend is built and uploaded to an S3 static website bucket. Uploaded/generated files use a separate private S3 bucket.
+**Zuno AI solves these problems** by decoupling the application into independent microservices, utilizing a tiered agent router to minimize latency and costs, and wrapping the frontend in an adaptive desktop/mobile design.
 
 ---
 
-## Architecture
+## 🚀 Live Demo & Endpoints
 
-```text
-Browser
-  |
-  | React + Vite frontend
-  | Firebase Google login
-  v
-S3 Static Website Hosting
-  |
-  v
-Application Load Balancer
-  |
-  v
-Gateway Service - Express
-  |
-  |-- /api/auth    -> Auth Service
-  |-- /api/chat    -> Chat Service
-  |-- /api/agent   -> Agent Service
-  |-- /api/billing -> Billing Service
-  |
-  v
-Backend Services
-  |
-  |-- MongoDB: users, conversations, messages, payments
-  |-- Redis: sessions, memory, rate limiting
-  |-- S3: uploaded and generated files
-  |-- Razorpay: payment orders and verification
-  |-- AI Providers: OpenRouter, Gemini, Groq, Tavily, Qdrant
+| Resource | URL |
+| :--- | :--- |
+| **Frontend Web App** | [http://myai-demo1.s3-website.ap-south-1.amazonaws.com](http://myai-demo1.s3-website.ap-south-1.amazonaws.com) |
+| **API Gateway (ALB)** | `http://myai-alb-452140884.ap-south-1.elb.amazonaws.com` |
+| **Source Code** | [https://github.com/aasif-45/Zuno-AI](https://github.com/aasif-45/Zuno-AI) |
+| **Cloud Region** | `ap-south-1` (AWS Asia Pacific - Mumbai) |
+
+---
+
+## 🤖 Specialized AI Agents
+
+| Agent Mode | Icon | Core Capabilities & Technology | Credit Cost |
+| :--- | :---: | :--- | :---: |
+| **Auto Router** | ⚡ | Analyzes prompt intent & attachments; automatically dispatches to the optimal agent node. | *Varies* |
+| **Coding Assistant** | 💻 | Writes clean code, explains bugs, and generates interactive code artifacts rendered in Monaco Editor. | 1 Credit |
+| **PPT Generator** | 📊 | Generates formatted multi-slide PowerPoint presentations (`.pptx`) saved to S3. | 2 Credits |
+| **PDF Generator** | 📄 | Produces structured PDF reports with clean typography, tables, and headers. | 2 Credits |
+| **PDF Reader / RAG** | 📑 | Extracts text and semantic embeddings from uploaded PDFs for contextual Q&A. | 1 Credit |
+| **Vision & Image OCR** | 👁️ | Analyzes uploaded images/diagrams using multimodal vision models. | 1 Credit |
+| **Image Generation** | 🎨 | Generates high-fidelity artwork and assets from natural language prompts. | 3 Credits |
+| **Web Search** | 🌐 | Real-time web-grounded query execution using Tavily Search API. | 1 Credit |
+| **General Chat** | 💬 | Fast, contextual conversational intelligence with conversational memory. | 1 Credit |
+
+---
+
+## 🏗️ System Architecture
+
 ```
-
-### Current AWS Runtime Layout
-
-For the current deployment, the backend services run together in one ECS Fargate task:
-
-```text
-ECS Task
-  |-- gateway  :3000
-  |-- auth     :3005
-  |-- chat     :3010
-  |-- agent    :3015
-  |-- billing  :3020
-  |-- redis    :6379
-```
-
-This all-in-one task design keeps networking simple for the first production deployment because services communicate through `localhost`. A future production version can split these into independent ECS services using ECS Service Connect or AWS Cloud Map.
-
----
-
-## Backend Services
-
-### Gateway Service
-
-Path: `backend/gateway`
-
-Responsibilities:
-
-- Public API entrypoint
-- CORS handling
-- Cookie parsing
-- Redis session validation
-- Protected route handling
-- Proxying requests to internal services
-- Forwarding authenticated user context through headers
-
-Important routes:
-
-```text
-/api/auth
-/api/chat
-/api/agent
-/api/billing
-/api/me
-```
-
-### Auth Service
-
-Path: `backend/services/auth`
-
-Responsibilities:
-
-- Verify Firebase ID tokens
-- Create/fetch users in MongoDB
-- Create Redis sessions
-- Store user plan and credits
-- Update user plan after payment
-- Deduct credits after AI usage
-
-### Chat Service
-
-Path: `backend/services/chat`
-
-Responsibilities:
-
-- Create conversations
-- List conversations by user
-- Update conversation titles
-- Save user/assistant messages
-- Fetch message history
-- Delete conversations and related messages
-
-### Agent Service
-
-Path: `backend/services/agent`
-
-Responsibilities:
-
-- Receive user prompts and optional files
-- Upload files to S3
-- Route work through LangGraph
-- Execute specialized agents
-- Save AI results
-- Generate conversation titles
-- Check rate limits
-- Check and deduct credits
-
-### Billing Service
-
-Path: `backend/services/Billing`
-
-Responsibilities:
-
-- Create Razorpay orders
-- Store payment records
-- Verify Razorpay signatures
-- Mark payments as paid
-- Notify auth service to update plan and credits
-
----
-
-## AI Agent System
-
-The agent system is implemented with LangGraph.
-
-### Agent Graph
-
-```text
-START
-  |
-  v
-router
-  |
-  |-- chat          -> END
-  |-- search        -> chat -> END
-  |-- coding        -> END
-  |-- pdf           -> END
-  |-- ppt           -> END
-  |-- imageGen      -> END
-  |-- pdfRag        -> END
-  |-- imageAnalyzer -> END
-```
-
-### Routing Strategy
-
-Routing is not only LLM-based. It uses a layered approach:
-
-1. Uploaded file type has highest priority.
-   - PDF upload routes to PDF RAG.
-   - Image upload routes to image analysis.
-2. Explicit user-selected agent is considered.
-3. Keyword fast paths handle obvious cases like PDF, PPT, code, image generation, and search.
-4. An LLM classifier is used as a fallback for ambiguous prompts.
-
-This design reduces cost and latency because obvious cases do not need model classification.
-
-### Model Fallback Strategy
-
-The backend supports multiple model providers:
-
-- OpenRouter
-- Google Gemini
-- Groq
-
-The model execution layer attempts a primary model first, then falls back to other providers when limits, timeouts, or provider errors occur.
-
----
-
-## Authentication and Sessions
-
-Authentication combines Firebase identity with Redis application sessions.
-
-### Login Flow
-
-```text
-User clicks Google Login
-  |
-  v
-Firebase returns ID token
-  |
-  v
-Frontend sends token to /api/auth/login
-  |
-  v
-Auth service verifies token using Firebase Admin
-  |
-  v
-MongoDB user is created or fetched
-  |
-  v
-Random session ID is generated
-  |
-  v
-Session payload is stored in Redis
-  |
-  v
-Frontend stores session ID and user data
-```
-
-### Why Redis Sessions?
-
-Redis stores app-specific session state such as:
-
-- User ID
-- Name and email
-- Plan
-- Credits
-- Session ID
-- Expiration
-
-This allows the gateway to validate requests quickly without every service verifying Firebase tokens.
-
----
-
-## Billing and Credits
-
-### Plans
-
-| Plan | Price | Credits |
-|---|---:|---:|
-| Free | INR 0 | 100 |
-| Starter | INR 199 | 500 |
-| Pro | INR 499 | 1000 |
-
-### Credit Cost by Agent
-
-| Agent | Credits |
-|---|---:|
-| Chat | 2 |
-| Search | 3 |
-| Coding | 3 |
-| Image | 4 |
-| PDF | 5 |
-| PPT | 5 |
-
-### Payment Verification
-
-Razorpay payment verification is done on the backend using HMAC SHA-256. The backend verifies the signature before updating the user's plan and credits.
-
-This is important because frontend callbacks alone cannot be trusted.
-
----
-
-## Data Model
-
-### User
-
-Stores:
-
-- Firebase UID
-- Name
-- Email
-- Avatar
-- Plan
-- Credits
-- Total credits
-- Plan start date
-- Plan expiry date
-
-### Conversation
-
-Stores:
-
-- Title
-- User ID
-- Created/updated timestamps
-
-### Message
-
-Stores:
-
-- Conversation ID
-- Role: `user` or `assistant`
-- Content
-- Images
-- Artifacts
-- File name
-- File type
-- File URL
-- Created/updated timestamps
-
-### Payment
-
-Stores:
-
-- User ID
-- Razorpay order ID
-- Razorpay payment ID
-- Amount
-- Currency
-- Credits
-- Plan
-- Status
-- Paid timestamp
-
----
-
-## File Storage
-
-Files are not stored directly in MongoDB.
-
-The system stores:
-
-- Actual files in S3
-- File metadata in MongoDB
-
-This is used for:
-
-- Uploaded images
-- Uploaded PDFs
-- Generated PDFs
-- Generated PPTs
-- Other downloadable artifacts
-
-The upload bucket is intended to stay private. The backend can return presigned URLs or redirect to short-lived S3 access links.
-
----
-
-## Tech Stack
-
-### Frontend
-
-- React 19
-- Vite
-- Redux Toolkit
-- Tailwind CSS
-- Axios
-- Firebase Auth
-- Razorpay Checkout
-- React Markdown
-- Lucide React
-- Motion
-- JSZip / File Saver
-
-### Backend
-
-- Node.js 22
-- Express.js
-- MongoDB / Mongoose
-- Redis / ioredis
-- Firebase Admin
-- Razorpay SDK
-- LangChain
-- LangGraph
-- Multer
-- AWS SDK for S3
-- Puppeteer
-- PPTXGenJS
-
-### AI and Integrations
-
-- OpenRouter
-- Google Gemini
-- Groq
-- Tavily
-- Qdrant
-
-### Cloud and DevOps
-
-- Docker
-- AWS ECR
-- AWS ECS Fargate
-- AWS Application Load Balancer
-- AWS S3
-- AWS IAM
-- AWS CloudWatch Logs
-- PowerShell deployment scripts
-
----
-
-## Repository Structure
-
-```text
-.
-|-- backend
-|   |-- gateway
-|   |   |-- index.js
-|   |   |-- middleware
-|   |   |-- controllers
-|   |   |-- utils
-|   |   `-- Dockerfile
-|   |-- services
-|   |   |-- auth
-|   |   |-- chat
-|   |   |-- agent
-|   |   `-- Billing
-|   |-- shared
-|   |   `-- redis
-|   |-- package.json
-|   `-- docker-compose.yml
-|-- frontend
-|   |-- src
-|   |   |-- components
-|   |   |-- features
-|   |   |-- pages
-|   |   |-- redux
-|   |   `-- utils
-|   |-- public
-|   |-- package.json
-|   `-- vite.config.js
-|-- deploy
-|   `-- aws
-|       |-- create-ecr-repos.ps1
-|       |-- build-and-push-backend.ps1
-|       |-- deploy-ecs-all-in-one.ps1
-|       |-- deploy-frontend-s3.ps1
-|       `-- README.md
-|-- .github
-|   `-- workflows
-|-- README.md
-`-- skills-lock.json
+                               ┌─────────────────────────────────────────┐
+                               │             Client Browser              │
+                               │  (React 19 + Vite + Tailwind CSS + PWA) │
+                               └────────────────────┬────────────────────┘
+                                                    │
+                                     HTTP Requests & File Uploads
+                                                    │
+                                                    ▼
+                               ┌─────────────────────────────────────────┐
+                               │      AWS Application Load Balancer      │
+                               │        (Port 80 -> Forwarding)          │
+                               └────────────────────┬────────────────────┘
+                                                    │
+                                                    ▼
+┌────────────────────────────────────────────────────────────────────────────────────────────────────────┐
+│                                       AWS ECS Fargate Task                                             │
+│                                                                                                        │
+│   ┌────────────────────────────────────────────────────────────────────────────────────────────────┐   │
+│   │                                   API Gateway Service (:3000)                                  │   │
+│   │                      • Reverse Proxy • CORS • Rate Limiting • Session Validation               │   │
+│   └───────────────┬───────────────────────────────┬───────────────────────────────┬────────────────┘   │
+│                   │                               │                               │                    │
+│                   ▼                               ▼                               ▼                    │
+│   ┌───────────────────────────────┐ ┌───────────────────────────────┐ ┌────────────────────────────┐   │
+│   │      Auth Service (:3005)     │ │      Chat Service (:3010)     │ │   Billing Service (:3020)  │   │
+│   │  • Firebase Token Verification│ │  • Conversation CRUD          │ │   • Razorpay Order Creation│   │
+│   │  • User Profile Lifecycle     │ │  • Message History Storage    │ │   • Signature Verification │   │
+│   │  • Redis Session Creation     │ │  • Dynamic Title Generation   │ │   • Credit Balance Top-up  │   │
+│   └───────────────┬───────────────┘ └───────────────┬───────────────┘ └─────────────┬──────────────┘   │
+│                   │                                 │                               │                  │
+│                   └─────────────────────────────────┼───────────────────────────────┘                  │
+│                                                     │                                                  │
+│                                                     ▼                                                  │
+│                                   ┌───────────────────────────────────┐                                │
+│                                   │        Agent Service (:3015)      │                                │
+│                                   │  • LangGraph StateGraph Router    │                                │
+│                                   │  • Tool Executions & File Parser  │                                │
+│                                   │  • S3 Asset Generation & Upload   │                                │
+│                                   │  • Multi-LLM Provider Interface   │                                │
+│                                   └─────────────────┬─────────────────┘                                │
+│                                                     │                                                  │
+│                                                     ▼                                                  │
+│                                   ┌───────────────────────────────────┐                                │
+│                                   │        Local Redis Cache (:6379)  │                                │
+│                                   │  • Session Store • Agent Memory   │                                │
+│                                   └───────────────────────────────────┘                                │
+└─────────────────────────────────────────────────────┬──────────────────────────────────────────────────┘
+                                                      │
+                       ┌──────────────────────────────┼──────────────────────────────┐
+                       │                              │                              │
+                       ▼                              ▼                              ▼
+          ┌─────────────────────────┐    ┌─────────────────────────┐    ┌─────────────────────────┐
+          │      MongoDB Atlas      │    │     AWS S3 Buckets      │    │     External AI APIs    │
+          │ • Users & Credentials   │    │ • Static App Hosting    │    │ • OpenRouter & Gemini   │
+          │ • Chats & Messages      │    │ • Private User Uploads  │    │ • Tavily Web Search     │
+          │ • Orders & Transactions │    │ • Generated PDF & PPTX  │    │ • Razorpay Gateway      │
+          └─────────────────────────┘    └─────────────────────────┘    └─────────────────────────┘
 ```
 
 ---
 
-## Environment Variables
+## 🛠️ Technology Stack
 
-Each service uses its own `.env` file during local development. Do not commit real secrets.
+### **Frontend:**
+* **Core:** React 19, Vite, React Router v7
+* **State Management:** Redux Toolkit (`@reduxjs/toolkit`, `react-redux`)
+* **Styling & Animation:** Tailwind CSS v4, Motion (`motion/react`), Lucide React icons
+* **Code & Markdown:** Monaco Editor (`@monaco-editor/react`), `react-markdown`, `react-syntax-highlighter`, `remark-gfm`
+* **File Management:** JSZip, FileSaver
 
-### Frontend
+### **Backend Microservices:**
+* **Runtime & Framework:** Node.js (ES Modules), Express.js
+* **AI Orchestration:** LangGraph, LangChain (`@langchain/core`, `@langchain/community`)
+* **Databases:** MongoDB Atlas (Mongoose ODM), Redis (ioredis)
+* **Authentication:** Firebase Admin SDK (Google OAuth2 token verification)
+* **File & Media Processing:** AWS SDK (`@aws-sdk/client-s3`), Multer, pdf-parse, pptxgenjs, pdfkit
+* **Payments:** Razorpay Node.js SDK
+
+### **DevOps & Cloud Infrastructure:**
+* **Containerization:** Docker, Multi-stage builds, Docker Compose
+* **Cloud Platform:** Amazon Web Services (AWS)
+* **Compute:** AWS ECS (Elastic Container Service) with Fargate (Serverless CPU/RAM)
+* **Networking:** Application Load Balancer (ALB), Target Groups, VPC Public Subnets
+* **Storage:** AWS S3 (Static Website Hosting + Private Asset Store)
+* **CI/CD & Registries:** AWS ECR (Elastic Container Registry), PowerShell automation scripts
+
+---
+
+## 📂 Repository Structure
+
+```text
+Zuno-AI/
+├── backend/
+│   ├── gateway/                  # API Gateway (Reverse Proxy & Rate Limiting)
+│   │   ├── index.js
+│   │   └── Dockerfile
+│   ├── services/
+│   │   ├── agent/                # LangGraph Multi-Agent Orchestrator
+│   │   │   ├── config/           # LLM, S3, Memory, Tavily configurations
+│   │   │   ├── controllers/      # Agent request lifecycle & credit deduction
+│   │   │   ├── graph/            # LangGraph StateGraph, Nodes, & Router
+│   │   │   ├── routes/
+│   │   │   └── Dockerfile
+│   │   ├── auth/                 # Authentication & User Management
+│   │   │   ├── controllers/      # Firebase token verification & sessions
+│   │   │   ├── models/           # User schema
+│   │   │   └── Dockerfile
+│   │   ├── chat/                 # Conversations & Message Management
+│   │   │   ├── controllers/      # Chat CRUD, Title auto-generation
+│   │   │   ├── models/           # Conversation & Message schemas
+│   │   │   └── Dockerfile
+│   │   └── Billing/              # Razorpay Payments & Credit Top-ups
+│   │       ├── controllers/      # Order creation & signature verification
+│   │       ├── models/           # Payment transaction schema
+│   │       └── Dockerfile
+│   ├── shared/                   # Shared Redis & utility libraries
+│   ├── docker-compose.yml        # Local multi-service orchestration
+│   └── package.json
+├── frontend/
+│   ├── public/                   # Static logos, favicons, and SVGs
+│   ├── src/
+│   │   ├── assets/               # UI graphics
+│   │   ├── components/           # UI Components (Sidebar, ChatArea, Artifacts, Modals)
+│   │   │   ├── Artifact.jsx      # Live Code Sandbox & Preview
+│   │   │   ├── BillingDrawer.jsx # Mobile-friendly Plan Upgrade Modal
+│   │   │   ├── ChatInput.jsx     # Responsive Input Box & Agent Selector
+│   │   │   ├── MessageBubble.jsx # Markdown, tables, code blocks, file links
+│   │   │   ├── ProfileModal.jsx  # User account & credit status bottom sheet
+│   │   │   ├── SettingsModal.jsx # App preferences & data export
+│   │   │   └── Sidebar.jsx       # Persistent collapsible chat history drawer
+│   │   ├── features/             # Axios API service integrations
+│   │   ├── redux/                # Redux slices (User, Conversation, Message)
+│   │   ├── utils/                # Axios instance & Firebase client config
+│   │   ├── App.jsx
+│   │   └── main.jsx
+│   ├── index.html
+│   ├── package.json
+│   └── vite.config.js
+├── deploy/
+│   └── aws/                      # Automated AWS Deployment PowerShell Scripts
+│       ├── create-ecr-repos.ps1
+│       ├── build-and-push-backend.ps1
+│       ├── deploy-ecs-all-in-one.ps1
+│       └── deploy-frontend-s3.ps1
+├── .gitignore
+└── README.md
+```
+
+---
+
+## 🗄️ Database Schemas & Data Model
+
+### 1. **User Schema (`User.js`)**
+```javascript
+{
+  name: { type: String, required: true },
+  email: { type: String, required: true, unique: true },
+  avatar: { type: String, default: "" },
+  firebaseUid: { type: String, required: true, unique: true },
+  plan: { type: String, enum: ["free", "starter", "pro"], default: "free" },
+  credits: { type: Number, default: 100 },
+  totalCredits: { type: Number, default: 100 },
+  createdAt: { type: Date, default: Date.now }
+}
+```
+
+### 2. **Conversation Schema (`conversation.model.js`)**
+```javascript
+{
+  userId: { type: String, required: true, index: true },
+  title: { type: String, default: "New Chat" },
+  createdAt: { type: Date, default: Date.now },
+  updatedAt: { type: Date, default: Date.now }
+}
+```
+
+### 3. **Message Schema (`message.model.js`)**
+```javascript
+{
+  conversationId: { type: Schema.Types.ObjectId, ref: "Conversation", required: true, index: true },
+  sender: { type: String, enum: ["user", "assistant"], required: true },
+  text: { type: String, required: true },
+  agentUsed: { type: String, default: "auto" },
+  fileUrl: { type: String, default: null },
+  fileName: { type: String, default: null },
+  fileType: { type: String, default: null },
+  createdAt: { type: Date, default: Date.now }
+}
+```
+
+### 4. **Payment Schema (`payment.model.js`)**
+```javascript
+{
+  userId: { type: String, required: true, index: true },
+  orderId: { type: String, required: true, unique: true },
+  paymentId: { type: String },
+  signature: { type: String },
+  plan: { type: String, required: true },
+  amount: { type: Number, required: true },
+  status: { type: String, enum: ["created", "paid", "failed"], default: "created" },
+  createdAt: { type: Date, default: Date.now }
+}
+```
+
+---
+
+## ⚙️ Environment Variables Guide
+
+### **Backend (`.env`)**
+Create `.env` in the respective `backend/services/*` folders:
 
 ```env
-VITE_FIREBASE_API_KEY=
-VITE_SERVER_URL=http://localhost:3000
-VITE_RAZORPAY_KEY_ID=
-```
-
-### Gateway
-
-```env
+# Server
 PORT=3000
-FRONTEND_URL=http://localhost:5173
-AUTH_SERVICE=http://localhost:3005
-CHAT_SERVICE=http://localhost:3010
-AGENT_SERVICE=http://localhost:3015
-BILLING_SERVICE=http://localhost:3020
-REDIS_URL=redis://localhost:6379
+NODE_ENV=development
+
+# Database & Cache
+MONGO_URI=mongodb+srv://<username>:<password>@cluster.mongodb.net/zuno_ai?retryWrites=true&w=majority
+REDIS_HOST=127.0.0.1
+REDIS_PORT=6379
+
+# Firebase Admin
+FIREBASE_SERVICE_ACCOUNT_KEY={"type":"service_account",...}
+
+# AWS S3 Storage
+AWS_REGION=ap-south-1
+AWS_ACCESS_KEY_ID=your_aws_access_key
+AWS_SECRET_ACCESS_KEY=your_aws_secret_key
+S3_BUCKET_NAME=your_s3_files_bucket
+
+# AI Model APIs
+OPENROUTER_API_KEY=sk-or-v1-...
+GEMINI_API_KEY=AIzaSy...
+TAVILY_API_KEY=tvly-...
+
+# Payments
+RAZORPAY_KEY_ID=rzp_test_...
+RAZORPAY_KEY_SECRET=your_razorpay_secret
 ```
 
-### Auth Service
-
+### **Frontend (`frontend/.env`)**
 ```env
-PORT=3005
-MONGO_URI=
-REDIS_URL=redis://localhost:6379
-```
-
-### Chat Service
-
-```env
-PORT=3010
-MONGO_URI=
-```
-
-### Agent Service
-
-```env
-PORT=3015
-MONGO_URI=
-REDIS_URL=redis://localhost:6379
-AUTH_SERVICE=http://localhost:3005
-CHAT_SERVICE=http://localhost:3010
-AWS_REGION=
-AWS_S3_BUCKET_NAME=
-GROQ_API_KEY=
-GOOGLE_API_KEY=
-OPENROUTER_API_KEY=
-TAVILY_API_KEY=
-QDRANT_URL=
-QDRANT_API_KEY=
-CF_IMAGE_API_URL=
-CF_IMAGE_API_KEY=
-```
-
-### Billing Service
-
-```env
-PORT=3020
-MONGO_URI=
-AUTH_SERVICE=http://localhost:3005
-CHAT_SERVICE=http://localhost:3010
-AGENT_SERVICE=http://localhost:3015
-RAZORPAY_KEY_ID=
-RAZORPAY_KEY_SECRET=
+VITE_API_URL=http://localhost:3000
+VITE_FIREBASE_API_KEY=your_firebase_api_key
+VITE_FIREBASE_AUTH_DOMAIN=your_project.firebaseapp.com
+VITE_FIREBASE_PROJECT_ID=your_project_id
+VITE_FIREBASE_STORAGE_BUCKET=your_project.appspot.com
+VITE_FIREBASE_MESSAGING_SENDER_ID=1234567890
+VITE_FIREBASE_APP_ID=1:1234567890:web:abcdef
+VITE_RAZORPAY_KEY_ID=rzp_test_...
 ```
 
 ---
 
-## Local Development
+## 🚀 Step-by-Step Local Setup
 
-Install dependencies inside each app/service folder. The repository intentionally does not require committing `node_modules`.
-
-### 1. Frontend
-
-```powershell
-cd frontend
-npm install
-npm run dev
+### 1. **Clone the Repository**
+```bash
+git clone https://github.com/aasif-45/Zuno-AI.git
+cd Zuno-AI
 ```
 
-Frontend runs on:
-
-```text
-http://localhost:5173
-```
-
-### 2. Backend Root
-
-```powershell
+### 2. **Run Backend with Docker Compose**
+Ensure Docker Desktop is running:
+```bash
 cd backend
-npm install
+docker-compose up -d redis
 ```
 
-### 3. Gateway
-
-```powershell
-cd backend/gateway
-npm install
-npm run dev
+### 3. **Install Dependencies & Start Backend Services**
+```bash
+# In separate terminal tabs or using a process manager:
+cd backend/gateway && npm install && npm run dev
+cd backend/services/auth && npm install && npm run dev
+cd backend/services/chat && npm install && npm run dev
+cd backend/services/agent && npm install && npm run dev
+cd backend/services/Billing && npm install && npm run dev
 ```
 
-### 4. Auth Service
-
-```powershell
-cd backend/services/auth
-npm install
-npm run dev
-```
-
-### 5. Chat Service
-
-```powershell
-cd backend/services/chat
+### 4. **Install & Run Frontend**
+```bash
+cd ../../frontend
 npm install
 npm run dev
 ```
-
-### 6. Agent Service
-
-```powershell
-cd backend/services/agent
-npm install
-npm run dev
-```
-
-### 7. Billing Service
-
-```powershell
-cd backend/services/Billing
-npm install
-npm run dev
-```
-
-### 8. Redis
-
-For local Redis, use Docker:
-
-```powershell
-cd backend
-docker compose up -d
-```
+Open [http://localhost:5173](http://localhost:5173) in your browser!
 
 ---
 
-## AWS Deployment
+## ☁️ AWS Cloud Deployment Summary
 
-Deployment helpers are in:
+The project includes ready-to-use PowerShell scripts in `deploy/aws/`:
 
-```text
-deploy/aws
-```
-
-### Prerequisites
-
-```powershell
-aws configure
-aws sts get-caller-identity
-docker info
-```
-
-### Create ECR Repositories
-
-```powershell
-.\deploy\aws\create-ecr-repos.ps1 -Region ap-south-1
-```
-
-### Build and Push Backend Images
-
-```powershell
-.\deploy\aws\build-and-push-backend.ps1 `
-  -AccountId YOUR_ACCOUNT_ID `
-  -Region ap-south-1
-```
-
-### Deploy ECS Backend
-
-```powershell
-.\deploy\aws\deploy-ecs-all-in-one.ps1 `
-  -AccountId YOUR_ACCOUNT_ID `
-  -Region ap-south-1 `
-  -FrontendUrl http://your-frontend-bucket.s3-website.ap-south-1.amazonaws.com `
-  -UploadBucket your-private-upload-bucket
-```
-
-### Deploy Frontend to S3
-
-```powershell
-.\deploy\aws\deploy-frontend-s3.ps1 `
-  -BucketName your-public-frontend-bucket `
-  -GatewayUrl http://your-alb-dns-name `
-  -Region ap-south-1
-```
-
-### Notes
-
-- Use one public S3 bucket for frontend assets.
-- Use a separate private S3 bucket for uploaded/generated files.
-- Do not put secret keys in frontend environment variables.
-- For production HTTPS, put CloudFront and ACM in front of the frontend and/or API.
-- The included GitHub Actions workflow may need region, ECR repository, ECS service, S3 bucket, and CloudFront values updated before use.
+1. **`create-ecr-repos.ps1`**: Provisions AWS ECR private repositories for all microservices.
+2. **`build-and-push-backend.ps1`**: Builds Linux/amd64 Docker containers and pushes images to ECR.
+3. **`deploy-ecs-all-in-one.ps1`**: Creates IAM roles, CloudWatch log groups, security groups, ALB target groups, and registers an ECS Fargate task definition.
+4. **`deploy-frontend-s3.ps1`**: Builds the production React app with Vite and deploys static assets to AWS S3 with cache-busting headers.
 
 ---
 
-## Important Engineering Decisions
+## 💡 Engineering Challenges & Key Learnings
 
-### Gateway Instead of Direct Service Access
+1. **State Consistency Across Distributed Services:**
+   - *Challenge:* Deducting credits accurately while handling multi-step agent execution failures.
+   - *Solution:* Implemented post-execution atomic credit deduction in MongoDB using session locks so users are never charged for aborted or failed AI generations.
 
-The frontend only talks to the gateway. The gateway validates sessions and forwards requests to internal services. This keeps authentication and CORS centralized.
+2. **Deterministic vs. LLM Router Optimization:**
+   - *Challenge:* LLM classifiers add 800ms–1.5s latency to simple greetings and basic code queries.
+   - *Solution:* Built a 2-tier router. Fast regular-expression and keyword heuristics resolve obvious queries in $<5\text{ms}$; complex ambiguous prompts fall back gracefully to the LangGraph LLM classifier.
 
-### Firebase Identity + Redis Sessions
+3. **In-Browser Artifact Rendering & Security:**
+   - *Challenge:* Safely rendering user-generated HTML/JS artifacts without exposing parent app cookies or triggering XSS.
+   - *Solution:* Sandboxed `<iframe>` environment with Monaco Editor, blocking top-level DOM access while allowing interactive game and app preview.
 
-Firebase proves the user's Google identity. Redis stores application session data such as user ID, plan, credits, and session expiry.
-
-### Rule-Based + LLM-Based Agent Routing
-
-The router handles obvious cases with deterministic rules and uses an LLM classifier only when required. This improves speed, cost, and reliability.
-
-### S3 for Files
-
-Generated files and uploads are stored in S3 instead of MongoDB. MongoDB stores metadata only.
-
-### Credit Deduction After Agent Execution
-
-The system deducts credits based on the actual agent used, not only the mode selected in the UI.
+4. **Mobile UX Fidelity:**
+   - *Challenge:* Centered modal popups were difficult to reach on modern tall smartphone screens.
+   - *Solution:* Refactored Settings, Profile, and Billing modals to responsive bottom-sheet drawers with fixed headers, sticky action buttons, and $44\text{px}+$ touch targets.
 
 ---
 
-## Known Improvements
+## 🔮 Future Roadmap
 
-The current version is deployment-ready for demonstration and interview purposes. For a larger production system, the next improvements would be:
-
-- Move Redis from the ECS task into ElastiCache.
-- Split the all-in-one ECS task into separate ECS services.
-- Use ECS Service Connect or AWS Cloud Map for service discovery.
-- Store secrets in AWS Secrets Manager.
-- Add HTTPS with CloudFront and ACM.
-- Add API request validation.
-- Add automated tests for auth, billing, routing, and chat flows.
-- Add pagination for long message histories.
-- Add queues for long-running PDF/PPT/image generation.
-- Replace broad Redis session scans with direct session indexes.
-- Add dashboards and alarms in CloudWatch.
+- [ ] Transition single-task container into independent ECS Microservice Clusters using AWS Cloud Map.
+- [ ] Implement Redis-backed Token Bucket Rate Limiting per user IP/ID.
+- [ ] Add real-time Server-Sent Events (SSE) / WebSocket streaming for AI responses.
+- [ ] Migrate secret configurations to AWS Secrets Manager with automated key rotation.
+- [ ] CloudFront CDN distribution with SSL/TLS termination via AWS Certificate Manager (ACM).
 
 ---
 
-## License
+## 👨‍💻 Author & Academic Information
 
-This project is currently marked as ISC in the backend package metadata. Add a dedicated `LICENSE` file if you plan to publish it as open source.
+* **Developer:** Aasif
+* **Project Type:** Final Year Capstone / Full-Stack AI Portfolio Project
+* **GitHub:** [@aasif-45](https://github.com/aasif-45)
+* **Repository:** [Zuno-AI](https://github.com/aasif-45/Zuno-AI)
+
+---
+
+<div align="center">
+  <sub>Built with ❤️ using React 19, Node.js, LangGraph, Docker & AWS ECS.</sub>
+</div>
