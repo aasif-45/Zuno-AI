@@ -111,6 +111,15 @@ export const CHAT_MAX_TOKENS = 2500;
 export const DOCUMENT_MAX_TOKENS = 4000;
 
 /**
+ * A generated web project is three files (HTML + CSS + JS) in one response, so
+ * it is the largest single output we ask for. At the chat budget the response
+ * was cut off after the HTML block, and the artifact shipped as a lone
+ * index.html linking a styles.css and script.js that were never generated —
+ * the live preview rendered unstyled, inert markup.
+ */
+export const PROJECT_MAX_TOKENS = 4000;
+
+/**
  * Per-tier invocation ceiling. Four tiers at 65s each could push a single
  * request past 200s, far beyond the ALB idle timeout (now 300s, previously 60s),
  * which is what produced 504s while the container quietly finished the work.
@@ -258,11 +267,11 @@ export const getOpenRouterNemotron3Ultra = (maxTokens = CHAT_MAX_TOKENS) => {
 /**
  * Returns requested model instance with specific provider assignments.
  */
-export const getModel = async (type = "chat") => {
+export const getModel = async (type = "chat", maxTokens = CHAT_MAX_TOKENS) => {
   switch (type) {
     case "coding":
       // Primary: OpenRouter DeepSeek V4 Flash -> Nemotron 3 Ultra -> Groq Qwen
-      return getOpenRouterDeepSeekV4() || getOpenRouterNemotron3Ultra() || getGroq("qwen/qwen3.6-27b");
+      return getOpenRouterDeepSeekV4(maxTokens) || getOpenRouterNemotron3Ultra(maxTokens) || getGroq("qwen/qwen3.6-27b", maxTokens);
 
     case "router":
       // Primary: OpenRouter DeepSeek V4 Flash -> Groq Qwen

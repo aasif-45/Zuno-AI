@@ -64,16 +64,13 @@ export const generateSrcDoc = (files = []) => {
 </html>`;
   }
 
-  // 4. Strip relative <link> and <script> tags for local project files so the browser doesn't 404
-  files.forEach((f) => {
-    if (!f?.name) return;
-    const escaped = f.name.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
-    const linkRegex = new RegExp(`<link[^>]*href=["'](?:\\.\\/)?${escaped}["'][^>]*>`, "gi");
-    htmlContent = htmlContent.replace(linkRegex, "");
-
-    const scriptRegex = new RegExp(`<script[^>]*src=["'](?:\\.\\/)?${escaped}["'][^>]*>\\s*<\\/script>`, "gi");
-    htmlContent = htmlContent.replace(scriptRegex, "");
-  });
+  // 4. Strip relative <link> and <script> tags so the browser doesn't 404.
+  //    This must cover files the project references but never shipped, not just
+  //    the ones present: a truncated generation leaves a live <link href="styles.css">
+  //    that resolves against the parent page and logs a load error.
+  htmlContent = htmlContent
+    .replace(/<link[^>]*href=["'](?!https?:|data:|\/\/)[^"']+["'][^>]*>/gi, "")
+    .replace(/<script[^>]*src=["'](?!https?:|data:|\/\/)[^"']+["'][^>]*>\s*<\/script>/gi, "");
 
   // 5. Inject styles into <head> or at top
   if (allCss.trim()) {
@@ -87,23 +84,68 @@ export const generateSrcDoc = (files = []) => {
     }
   }
 
-  // 6. Inject JavaScript before </body> or at end
+  // 6. Inject JavaScript before </body> or at end.
+  //    The bundle is emitted ONCE. It used to be inlined twice — inside a
+  //    DOMContentLoaded handler and again behind a readyState check — so as soon
+  //    as the document was already interactive both copies were parsed in the
+  //    same <script>, every top-level `const` was a redeclaration, and the whole
+  //    script died with a SyntaxError before a single listener was attached.
   if (allJs.trim()) {
     const scriptTag = `<script>
-document.addEventListener("DOMContentLoaded", () => {
-  try {
+(function () {
+  var docAdd = document.addEventListener.bind(document);
+  var winAdd = window.addEventListener.bind(window);
+  var started = false;
+
+  // Generated scripts almost always wrap themselves in their own
+  // DOMContentLoaded / window.onload handler. By the time this bundle runs those
+  // events have already fired, so the callback would never be invoked and NOT A
+  // SINGLE listener got attached — the preview rendered but was completely inert.
+  // Replay those registrations instead of swallowing them.
+  var replay = function (type, fn) {
+    setTimeout(function () {
+      try {
+        fn.call(this, typeof Event === "function" ? new Event(type) : { type: type });
+      } catch (err) {
+        console.error("Artifact script error:", err);
+      }
+    }, 0);
+  };
+
+  document.addEventListener = function (type, fn, opts) {
+    if (started && typeof fn === "function" && (type === "DOMContentLoaded" || type === "readystatechange")) {
+      return replay(type, fn);
+    }
+    return docAdd(type, fn, opts);
+  };
+
+  window.addEventListener = function (type, fn, opts) {
+    if (started && typeof fn === "function" && (type === "load" || type === "DOMContentLoaded")) {
+      return replay(type, fn);
+    }
+    return winAdd(type, fn, opts);
+  };
+
+  var run = function () {
+    started = true;
+    try {
 ${allJs}
-  } catch (err) {
-    console.error("Artifact script error:", err);
+    } catch (err) {
+      console.error("Artifact script error:", err);
+    }
+    // Same problem via the legacy assignment form.
+    if (typeof window.onload === "function") {
+      replay("load", window.onload);
+      window.onload = null;
+    }
+  };
+
+  if (document.readyState === "loading") {
+    docAdd("DOMContentLoaded", run);
+  } else {
+    run();
   }
-});
-if (document.readyState === "complete" || document.readyState === "interactive") {
-  try {
-${allJs}
-  } catch (err) {
-    console.error("Artifact script error:", err);
-  }
-}
+})();
 </script>`;
 
     if (htmlContent.includes("</body>")) {
