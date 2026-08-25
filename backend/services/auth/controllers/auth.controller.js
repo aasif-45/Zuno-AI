@@ -12,6 +12,13 @@ export const login = async (req, res) => {
       return res.status(400).json({ message: "Token is required" });
     }
 
+    if (!app) {
+      console.error("[Auth] Login attempted but Firebase Admin is not configured.");
+      return res.status(503).json({
+        message: "Authentication is temporarily unavailable. Please try again shortly.",
+      });
+    }
+
     const decoded = await getAuth(app).verifyIdToken(token);
 
     let user = await User.findOne({
