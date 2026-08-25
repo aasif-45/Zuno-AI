@@ -110,6 +110,21 @@ const sanitizeResult = (res) => {
 export const CHAT_MAX_TOKENS = 2500;
 export const DOCUMENT_MAX_TOKENS = 4000;
 
+/**
+ * Per-tier invocation ceiling. Four tiers at 65s each could push a single
+ * request past 200s, far beyond the ALB idle timeout (now 300s, previously 60s),
+ * which is what produced 504s while the container quietly finished the work.
+ * 25s is enough for every tier that actually answers; the free tiers that stall
+ * never recover within 65s either, so the extra waiting bought nothing.
+ */
+export const TIER_TIMEOUT_MS = 25000;
+
+/**
+ * Documents emit ~4000 tokens in one object, so they legitimately need longer
+ * than a chat reply — but still bounded so the full cascade stays under the ALB.
+ */
+export const DOCUMENT_TIER_TIMEOUT_MS = 45000;
+
 export const getGroq = (modelName = "openai/gpt-oss-120b", maxTokens = CHAT_MAX_TOKENS) => {
   return new ChatGroq({
     apiKey: process.env.GROQ_API_KEY || "",
@@ -285,7 +300,17 @@ export const invokeModelWithFallback = async (model, input, options = {}) => {
   // Fallback tiers must honour the caller's token budget: a document request
   // that fell through to a 2500-token fallback came back truncated.
   const maxTokens = options.maxTokens || CHAT_MAX_TOKENS;
-  const invokeWithTimeout = (modelInst, ms = 65000) => {
+
+  // Per-tier ceiling. This used to be 65s on each of four tiers, so a request
+  // could legitimately run past 200s — well beyond the ALB idle timeout, which
+  // returned 504 to the browser while the container carried on and saved the
+  // answer. The reply then only appeared after a refresh.
+  const tierTimeout = options.timeoutMs || TIER_TIMEOUT_MS;
+
+  // Tiers the caller wants skipped, e.g. a free model that reliably stalls.
+  const skip = new Set(options.skipTiers || []);
+
+  const invokeWithTimeout = (modelInst, ms = tierTimeout) => {
     return Promise.race([
       modelInst.invoke(input),
       new Promise((_, reject) =>
@@ -298,7 +323,7 @@ export const invokeModelWithFallback = async (model, input, options = {}) => {
   if (model) {
     try {
       console.log("🤖 [AI Agent Pipeline] Executing Requested Primary Model...");
-      const res = await invokeWithTimeout(model, 65000);
+      const res = await invokeWithTimeout(model);
       console.log("✅ [AI Agent Pipeline] Primary Model succeeded!");
       return sanitizeResult(res);
     } catch (errPrimary) {
@@ -311,7 +336,7 @@ export const invokeModelWithFallback = async (model, input, options = {}) => {
     console.log("🔄 [AI Agent Pipeline] Fallback Tier 1: Executing OpenRouter DeepSeek V4 Flash...");
     const deepseekV4 = getOpenRouterDeepSeekV4(maxTokens);
     if (deepseekV4) {
-      const res = await invokeWithTimeout(deepseekV4, 65000);
+      const res = await invokeWithTimeout(deepseekV4);
       console.log("✅ [AI Agent Pipeline] OpenRouter DeepSeek V4 Flash succeeded!");
       return sanitizeResult(res);
     }
@@ -320,16 +345,18 @@ export const invokeModelWithFallback = async (model, input, options = {}) => {
   }
 
   // Fallback Tier 2: OpenRouter Nemotron 3 Ultra Free
-  try {
-    console.log("🔄 [AI Agent Pipeline] Fallback Tier 2: Executing OpenRouter Nemotron 3 Ultra Free...");
-    const nemotron = getOpenRouterNemotron3Ultra(maxTokens);
-    if (nemotron) {
-      const res = await invokeWithTimeout(nemotron, 65000);
-      console.log("✅ [AI Agent Pipeline] OpenRouter Nemotron 3 Ultra Free succeeded!");
-      return sanitizeResult(res);
+  if (!skip.has("nemotron")) {
+    try {
+      console.log("🔄 [AI Agent Pipeline] Fallback Tier 2: Executing OpenRouter Nemotron 3 Ultra Free...");
+      const nemotron = getOpenRouterNemotron3Ultra(maxTokens);
+      if (nemotron) {
+        const res = await invokeWithTimeout(nemotron);
+        console.log("✅ [AI Agent Pipeline] OpenRouter Nemotron 3 Ultra Free succeeded!");
+        return sanitizeResult(res);
+      }
+    } catch (errNemo) {
+      console.error("⚠️ [AI Agent Pipeline] OpenRouter Nemotron 3 Ultra Free failed:", errNemo.message || errNemo);
     }
-  } catch (errNemo) {
-    console.error("⚠️ [AI Agent Pipeline] OpenRouter Nemotron 3 Ultra Free failed:", errNemo.message || errNemo);
   }
 
   // Fallback Tier 3: LangChain Groq Model (Qwen - neutral, no brand identity)
@@ -337,7 +364,7 @@ export const invokeModelWithFallback = async (model, input, options = {}) => {
     console.log("🔄 [AI Agent Pipeline] Fallback Tier 3: Executing LangChain Groq (Qwen) model...");
     const groqModel = getGroq("qwen/qwen3.6-27b", maxTokens);
     if (groqModel) {
-      const res = await invokeWithTimeout(groqModel, 65000);
+      const res = await invokeWithTimeout(groqModel);
       console.log("✅ [AI Agent Pipeline] LangChain Groq (Qwen) model succeeded!");
       return sanitizeResult(res);
     }

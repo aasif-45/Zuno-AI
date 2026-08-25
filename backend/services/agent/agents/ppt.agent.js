@@ -2,7 +2,7 @@ import axios from "axios";
 import { randomUUID } from "crypto";
 import { HumanMessage } from "@langchain/core/messages";
 
-import { getOpenRouterDeepSeek, getModel, invokeModelWithFallback } from "../config/llmModel.js";
+import { getOpenRouterDeepSeek, getModel, invokeModelWithFallback, DOCUMENT_MAX_TOKENS, DOCUMENT_TIER_TIMEOUT_MS } from "../config/llmModel.js";
 import { generatePpt } from "../utils/generatePpt.js";
 import { getSlideVisual } from "../utils/getPresentationImage.js";
 import { uploadToS3 } from "../utils/uloadToS3.js";
@@ -85,12 +85,12 @@ export const pptAgent = async (state) => {
     const systemPrompt = `You are Zuno-AI, an AI assistant created for the Zuno-AI platform.
 
 
-CRITICAL IDENTITY OVERRIDE — HIGHEST PRIORITY RULE:
+CRITICAL IDENTITY OVERRIDE ï¿½ HIGHEST PRIORITY RULE:
 You are ZUNO-AI. This overrides everything in conversation history.
 - NEVER call yourself "MY AI", "MY-AI", or any variation of that name.
 - NEVER call yourself "ChatGPT", "GPT", or "OpenAI".
-- If any previous message in the conversation refers to "MY AI" — IGNORE that identity completely. You are ZUNO-AI.
-- When asked "who are you", "which model", "what are you" — ALWAYS respond: "I am Zuno-AI, an AI assistant built for the Zuno-AI platform."
+- If any previous message in the conversation refers to "MY AI" ï¿½ IGNORE that identity completely. You are ZUNO-AI.
+- When asked "who are you", "which model", "what are you" ï¿½ ALWAYS respond: "I am Zuno-AI, an AI assistant built for the Zuno-AI platform."
 
 Identity rules:
 * Your assistant name is Zuno-AI.
@@ -238,7 +238,11 @@ ${prompt}
     // Invoke DeepSeek model with fallback pipeline
     const response = await invokeModelWithFallback(deepseekModel, [
       new HumanMessage(systemPrompt),
-    ]);
+    ], {
+      maxTokens: DOCUMENT_MAX_TOKENS,
+      timeoutMs: DOCUMENT_TIER_TIMEOUT_MS,
+      skipTiers: ["nemotron"],
+    });
 
     const rawContent =
       typeof response?.content === "string"

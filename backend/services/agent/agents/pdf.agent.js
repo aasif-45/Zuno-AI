@@ -1,7 +1,7 @@
 import puppeteer from "puppeteer";
 import { randomUUID } from "crypto";
 
-import { getModel, invokeModelWithFallback, DOCUMENT_MAX_TOKENS } from "../config/llmModel.js";
+import { getModel, invokeModelWithFallback, DOCUMENT_MAX_TOKENS, DOCUMENT_TIER_TIMEOUT_MS } from "../config/llmModel.js";
 import { fetchImageBuffer } from "../utils/fetchImageBuffer.js";
 import { HumanMessage } from "@langchain/core/messages";
 
@@ -84,7 +84,13 @@ Rules:
 User request:
 ${prompt}
 `),
-    ], { maxTokens: DOCUMENT_MAX_TOKENS });
+    ], {
+      maxTokens: DOCUMENT_MAX_TOKENS,
+      timeoutMs: DOCUMENT_TIER_TIMEOUT_MS,
+      // The free Nemotron tier burned a full 65s and never answered in either
+      // end-to-end test run; skipping it keeps the cascade inside the ALB budget.
+      skipTiers: ["nemotron"],
+    });
 
     const rawContent =
       typeof response?.content === "string"
