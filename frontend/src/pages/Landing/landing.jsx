@@ -56,7 +56,7 @@ export default function LandingPage() {
 
   if (authLoading) {
     return (
-      <div className="flex h-screen w-full items-center justify-center bg-[#0d0f14] text-white">
+      <div className="flex h-[100dvh] w-full items-center justify-center bg-[#0d0f14] text-white">
         <div className="flex flex-col items-center gap-3 animate-pulse">
           <img
             src="/zuno-icon.png"
@@ -72,7 +72,7 @@ export default function LandingPage() {
   }
 
   return (
-    <div className="flex h-screen w-full bg-[#0d0f14] text-white overflow-hidden">
+    <div className="flex h-[100dvh] w-full bg-[#0d0f14] text-white overflow-hidden">
       <Sidebar />
       <ChatArea />
 

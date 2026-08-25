@@ -66,7 +66,7 @@ export default function SettingsModal({ isOpen, onClose }) {
 
   return (
     <AnimatePresence>
-      <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
+      <div className="fixed inset-0 z-[100] flex items-end sm:items-center justify-center p-0 sm:p-4">
         {/* Backdrop */}
         <motion.div
           initial={{ opacity: 0 }}
@@ -82,18 +82,32 @@ export default function SettingsModal({ isOpen, onClose }) {
           animate={{ scale: 1, opacity: 1, y: 0 }}
           exit={{ scale: 0.95, opacity: 0, y: 15 }}
           transition={{ type: "spring", duration: 0.25 }}
-          className="relative w-full max-w-2xl mx-3 sm:mx-auto overflow-hidden rounded-3xl bg-[#14161f] border border-white/10 text-white shadow-2xl flex flex-col md:flex-row min-h-[440px] max-h-[85vh]"
+          className="relative w-full max-w-2xl sm:mx-auto overflow-hidden rounded-t-3xl sm:rounded-3xl bg-[#14161f] border border-white/10 text-white shadow-2xl flex flex-col md:flex-row h-[88dvh] sm:h-auto sm:min-h-[440px] sm:max-h-[85vh]"
         >
-          {/* Close Button Mobile/Global */}
+          {/* Close Button (desktop, floats over the content pane) */}
           <button
             onClick={onClose}
-            className="absolute top-4 right-4 z-10 flex h-8 w-8 items-center justify-center rounded-lg text-slate-400 hover:bg-white/10 hover:text-white transition-colors cursor-pointer"
+            className="absolute top-4 right-4 z-10 hidden md:flex h-8 w-8 items-center justify-center rounded-lg text-slate-400 hover:bg-white/10 hover:text-white transition-colors cursor-pointer"
           >
             <X size={18} />
           </button>
 
+          {/* Mobile Header */}
+          <div className="flex md:hidden items-center justify-between border-b border-white/10 px-4 py-3.5 shrink-0 bg-[#0f1118]">
+            <div className="flex items-center gap-2">
+              <Settings size={18} className="text-slate-300" />
+              <span className="text-sm font-semibold text-white">Settings</span>
+            </div>
+            <button
+              onClick={onClose}
+              className="flex h-8 w-8 items-center justify-center rounded-lg text-slate-400 hover:bg-white/10 hover:text-white transition-colors cursor-pointer"
+            >
+              <X size={18} />
+            </button>
+          </div>
+
           {/* Left Navigation Sidebar */}
-          <div className="w-full md:w-52 border-b md:border-b-0 md:border-r border-white/10 p-3 bg-[#0f1118] flex md:flex-col gap-1 shrink-0 overflow-x-auto md:overflow-x-visible">
+          <div className="w-full md:w-52 border-b md:border-b-0 md:border-r border-white/10 p-2 md:p-3 bg-[#0f1118] flex md:flex-col gap-1 shrink-0 overflow-x-auto md:overflow-x-visible no-scrollbar [scrollbar-width:none]">
             <div className="hidden md:flex items-center gap-2 px-3 py-3 mb-2">
               <Settings size={18} className="text-slate-300" />
               <span className="text-sm font-semibold text-white">Settings</span>
@@ -120,7 +134,7 @@ export default function SettingsModal({ isOpen, onClose }) {
           </div>
 
           {/* Right Content Area */}
-          <div className="flex-1 p-6 overflow-y-auto [scrollbar-width:thin] [scrollbar-color:rgba(255,255,255,0.15)_transparent]">
+          <div className="flex-1 min-h-0 p-4 sm:p-6 overflow-y-auto overscroll-contain [scrollbar-width:thin] [scrollbar-color:rgba(255,255,255,0.15)_transparent]">
             {/* GENERAL TAB */}
             {activeTab === "general" && (
               <div className="space-y-6">
@@ -131,7 +145,7 @@ export default function SettingsModal({ isOpen, onClose }) {
 
                 <div className="divide-y divide-white/5 space-y-4">
                   {/* Theme */}
-                  <div className="flex items-center justify-between pt-4">
+                  <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between pt-4">
                     <div>
                       <div className="text-sm font-medium text-slate-200">Theme</div>
                       <div className="text-xs text-slate-400">Select application color mode</div>
@@ -139,7 +153,7 @@ export default function SettingsModal({ isOpen, onClose }) {
                     <select
                       value={theme}
                       onChange={(e) => setTheme(e.target.value)}
-                      className="bg-[#2a2a2a] border border-white/10 text-slate-200 text-xs rounded-lg px-3 py-2 outline-none focus:border-emerald-500 cursor-pointer"
+                      className="w-full sm:w-auto bg-[#2a2a2a] border border-white/10 text-slate-200 text-xs rounded-lg px-3 py-2 outline-none focus:border-emerald-500 cursor-pointer"
                     >
                       <option value="dark">Dark (Default)</option>
                       <option value="system">System Synchronized</option>
@@ -147,7 +161,7 @@ export default function SettingsModal({ isOpen, onClose }) {
                   </div>
 
                   {/* Language */}
-                  <div className="flex items-center justify-between pt-4">
+                  <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between pt-4">
                     <div>
                       <div className="text-sm font-medium text-slate-200">Language</div>
                       <div className="text-xs text-slate-400">Interface and response language</div>
@@ -155,7 +169,7 @@ export default function SettingsModal({ isOpen, onClose }) {
                     <select
                       value={language}
                       onChange={(e) => setLanguage(e.target.value)}
-                      className="bg-[#2a2a2a] border border-white/10 text-slate-200 text-xs rounded-lg px-3 py-2 outline-none focus:border-emerald-500 cursor-pointer"
+                      className="w-full sm:w-auto bg-[#2a2a2a] border border-white/10 text-slate-200 text-xs rounded-lg px-3 py-2 outline-none focus:border-emerald-500 cursor-pointer"
                     >
                       <option value="en">English (US)</option>
                       <option value="auto">Auto-detect</option>
@@ -167,12 +181,12 @@ export default function SettingsModal({ isOpen, onClose }) {
                   </div>
 
                   {/* Model Engine */}
-                  <div className="flex items-center justify-between pt-4">
+                  <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between pt-4">
                     <div>
                       <div className="text-sm font-medium text-slate-200">Default Model Engine</div>
                       <div className="text-xs text-slate-400">Preferred neural reasoning engine</div>
                     </div>
-                    <span className="text-xs font-mono px-2.5 py-1 rounded-md bg-white/10 text-emerald-400 border border-white/5">
+                    <span className="self-start sm:self-auto text-xs font-mono px-2.5 py-1 rounded-md bg-white/10 text-emerald-400 border border-white/5">
                       Best Model
                     </span>
                   </div>
@@ -210,28 +224,28 @@ export default function SettingsModal({ isOpen, onClose }) {
 
                 <div className="divide-y divide-white/5 space-y-4">
                   {/* Export */}
-                  <div className="flex items-center justify-between pt-4">
+                  <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between pt-4">
                     <div>
                       <div className="text-sm font-medium text-slate-200">Export Chat History</div>
                       <div className="text-xs text-slate-400">Download all your chats and code in JSON format</div>
                     </div>
                     <button
                       onClick={handleExportData}
-                      className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg bg-white/10 hover:bg-white/20 text-xs font-medium text-white transition-colors cursor-pointer"
+                      className="self-start sm:self-auto flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg bg-white/10 hover:bg-white/20 text-xs font-medium text-white transition-colors cursor-pointer"
                     >
                       <Download size={14} /> Export
                     </button>
                   </div>
 
                   {/* Clear All Chats */}
-                  <div className="flex items-center justify-between pt-4">
+                  <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between pt-4">
                     <div>
                       <div className="text-sm font-medium text-rose-400">Delete All Conversations</div>
                       <div className="text-xs text-slate-400">Permanently remove all previous chat history</div>
                     </div>
                     <button
                       onClick={handleClearAllChats}
-                      className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg bg-rose-500/20 hover:bg-rose-500/30 text-xs font-medium text-rose-400 border border-rose-500/30 transition-colors cursor-pointer"
+                      className="self-start sm:self-auto flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg bg-rose-500/20 hover:bg-rose-500/30 text-xs font-medium text-rose-400 border border-rose-500/30 transition-colors cursor-pointer"
                     >
                       <Trash2 size={14} /> Clear All
                     </button>
@@ -249,24 +263,24 @@ export default function SettingsModal({ isOpen, onClose }) {
                 </div>
 
                 <div className="divide-y divide-white/5 space-y-4">
-                  <div className="flex items-center justify-between pt-4">
+                  <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between pt-4">
                     <div>
                       <div className="text-sm font-medium text-slate-200">Microphone Input</div>
                       <div className="text-xs text-slate-400">Web Speech API realtime dictation</div>
                     </div>
-                    <span className="text-xs text-emerald-400 font-medium bg-emerald-500/10 px-2 py-1 rounded-md border border-emerald-500/20">
+                    <span className="self-start sm:self-auto text-xs text-emerald-400 font-medium bg-emerald-500/10 px-2 py-1 rounded-md border border-emerald-500/20">
                       Enabled
                     </span>
                   </div>
 
-                  <div className="flex items-center justify-between pt-4">
+                  <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between pt-4">
                     <div>
                       <div className="text-sm font-medium text-slate-200">Interface Sound Effects</div>
                       <div className="text-xs text-slate-400">Subtle audio cues on message completions</div>
                     </div>
                     <button
                       onClick={() => setSoundEffects(!soundEffects)}
-                      className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors cursor-pointer ${
+                      className={`relative inline-flex h-6 w-11 shrink-0 self-start sm:self-auto items-center rounded-full transition-colors cursor-pointer ${
                         soundEffects ? "bg-emerald-500" : "bg-white/20"
                       }`}
                     >
@@ -290,21 +304,21 @@ export default function SettingsModal({ isOpen, onClose }) {
                 </div>
 
                 <div className="rounded-xl bg-white/[0.03] border border-white/5 p-4 space-y-3 text-xs">
-                  <div className="flex items-center justify-between">
+                  <div className="flex flex-col gap-0.5 sm:flex-row sm:items-center sm:justify-between">
                     <span className="text-slate-400">Platform Version</span>
-                    <span className="text-slate-200 font-mono">v2.4.0 (2026.08 Production)</span>
+                    <span className="text-slate-200 font-mono break-words sm:text-right">v2.4.0 (2026.08 Production)</span>
                   </div>
-                  <div className="flex items-center justify-between">
+                  <div className="flex flex-col gap-0.5 sm:flex-row sm:items-center sm:justify-between">
                     <span className="text-slate-400">Agent Framework</span>
-                    <span className="text-slate-200 font-mono">LangGraph StateGraph</span>
+                    <span className="text-slate-200 font-mono break-words sm:text-right">LangGraph StateGraph</span>
                   </div>
-                  <div className="flex items-center justify-between">
+                  <div className="flex flex-col gap-0.5 sm:flex-row sm:items-center sm:justify-between">
                     <span className="text-slate-400">Supported Agents</span>
-                    <span className="text-emerald-400">Chat, Coding, PPT, PDF, Vision, ImageGen, Search</span>
+                    <span className="text-emerald-400 break-words sm:text-right">Chat, Coding, PPT, PDF, Vision, ImageGen, Search</span>
                   </div>
-                  <div className="flex items-center justify-between">
+                  <div className="flex flex-col gap-0.5 sm:flex-row sm:items-center sm:justify-between">
                     <span className="text-slate-400">Infrastructure</span>
-                    <span className="text-slate-200 font-mono">AWS ECS Fargate + Cloudflare Workers</span>
+                    <span className="text-slate-200 font-mono break-words sm:text-right">AWS ECS Fargate + Cloudflare Workers</span>
                   </div>
                 </div>
               </div>

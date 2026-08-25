@@ -433,7 +433,7 @@ export default function ChatInput() {
   };
 
   return (
-    <div className="px-3 sm:px-6 pb-2.5 sm:pb-5">
+    <div className="px-3 sm:px-6 pb-[max(0.625rem,env(safe-area-inset-bottom))] sm:pb-5">
       {/* Microphone Permission Modal Popup */}
       <AnimatePresence>
         {showPermissionModal && (

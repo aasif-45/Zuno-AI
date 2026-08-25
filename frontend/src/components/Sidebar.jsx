@@ -253,7 +253,7 @@ export default function Sidebar() {
       <aside
         className={`
           fixed md:relative inset-y-0 left-0 z-50 md:z-40
-          flex h-screen flex-col bg-black text-white
+          flex h-[100dvh] flex-col bg-black text-white
           transition-all duration-300 ease-in-out shrink-0 select-none
           ${isMobileSidebarOpen
             ? "translate-x-0 shadow-2xl w-[280px]"

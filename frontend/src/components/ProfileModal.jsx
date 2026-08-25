@@ -50,7 +50,7 @@ export default function ProfileModal({ isOpen, onClose, onUpgrade }) {
 
   return (
     <AnimatePresence>
-      <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
+      <div className="fixed inset-0 z-[100] flex items-end sm:items-center justify-center p-0 sm:p-4">
         {/* Backdrop */}
         <motion.div
           initial={{ opacity: 0 }}
@@ -66,10 +66,10 @@ export default function ProfileModal({ isOpen, onClose, onUpgrade }) {
           animate={{ scale: 1, opacity: 1, y: 0 }}
           exit={{ scale: 0.95, opacity: 0, y: 15 }}
           transition={{ type: "spring", duration: 0.25 }}
-          className="relative w-full max-w-lg mx-3 sm:mx-auto overflow-hidden rounded-3xl bg-[#14161f] border border-white/10 text-white shadow-2xl"
+          className="relative flex max-h-[92dvh] w-full max-w-lg flex-col overflow-hidden rounded-t-3xl sm:rounded-3xl bg-[#14161f] border border-white/10 text-white shadow-2xl sm:mx-auto"
         >
           {/* Header */}
-          <div className="flex items-center justify-between border-b border-white/10 px-6 py-4">
+          <div className="flex items-center justify-between border-b border-white/10 px-4 sm:px-6 py-3.5 sm:py-4 shrink-0">
             <div className="flex items-center gap-2.5">
               <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-white/10 text-slate-200">
                 <User size={18} />
@@ -85,11 +85,11 @@ export default function ProfileModal({ isOpen, onClose, onUpgrade }) {
           </div>
 
           {/* Body */}
-          <div className="p-6 space-y-6 max-h-[80vh] overflow-y-auto [scrollbar-width:thin] [scrollbar-color:rgba(255,255,255,0.15)_transparent]">
+          <div className="flex-1 min-h-0 p-4 sm:p-6 space-y-5 sm:space-y-6 overflow-y-auto overscroll-contain [scrollbar-width:thin] [scrollbar-color:rgba(255,255,255,0.15)_transparent]">
             {/* Avatar & Main Info */}
-            <div className="flex items-center gap-4 p-4 rounded-xl bg-white/[0.03] border border-white/5">
-              <div className="relative group">
-                <div className="flex h-16 w-16 items-center justify-center overflow-hidden rounded-full bg-[#10a37f] text-white font-bold text-xl shadow-lg">
+            <div className="flex items-center gap-3 sm:gap-4 p-3 sm:p-4 rounded-xl bg-white/[0.03] border border-white/5">
+              <div className="relative group shrink-0">
+                <div className="flex h-14 w-14 sm:h-16 sm:w-16 items-center justify-center overflow-hidden rounded-full bg-[#10a37f] text-white font-bold text-lg sm:text-xl shadow-lg">
                   {userData?.avatar ? (
                     <img
                       src={userData.avatar}
@@ -114,7 +114,7 @@ export default function ProfileModal({ isOpen, onClose, onUpgrade }) {
                     />
                     <button
                       onClick={handleSaveName}
-                      className="bg-emerald-500 text-black px-3 py-1.5 rounded-lg text-xs font-semibold hover:bg-emerald-400 transition-colors"
+                      className="bg-emerald-500 text-black px-3 py-1.5 rounded-lg text-xs font-semibold hover:bg-emerald-400 transition-colors shrink-0"
                     >
                       Save
                     </button>
@@ -152,7 +152,7 @@ export default function ProfileModal({ isOpen, onClose, onUpgrade }) {
             )}
 
             {/* Plan & Usage Grid */}
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               {/* Plan Card */}
               <div className="p-3.5 rounded-xl bg-white/[0.03] border border-white/5 space-y-1.5">
                 <div className="flex items-center justify-between">
@@ -195,22 +195,22 @@ export default function ProfileModal({ isOpen, onClose, onUpgrade }) {
               </h4>
 
               <div className="divide-y divide-white/5 rounded-xl bg-white/[0.03] border border-white/5">
-                <div className="flex items-center justify-between px-4 py-3 text-xs">
-                  <span className="text-slate-400 flex items-center gap-2">
+                <div className="flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between px-4 py-3 text-xs">
+                  <span className="text-slate-400 flex items-center gap-2 shrink-0">
                     <Mail size={14} /> Email
                   </span>
-                  <span className="text-slate-200 font-mono">{email}</span>
+                  <span className="text-slate-200 font-mono break-all sm:text-right">{email}</span>
                 </div>
 
-                <div className="flex items-center justify-between px-4 py-3 text-xs">
-                  <span className="text-slate-400 flex items-center gap-2">
+                <div className="flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between px-4 py-3 text-xs">
+                  <span className="text-slate-400 flex items-center gap-2 shrink-0">
                     <Cpu size={14} /> Neural Agent Engine
                   </span>
                   <span className="text-emerald-400 font-medium">Latest Model</span>
                 </div>
 
-                <div className="flex items-center justify-between px-4 py-3 text-xs">
-                  <span className="text-slate-400 flex items-center gap-2">
+                <div className="flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between px-4 py-3 text-xs">
+                  <span className="text-slate-400 flex items-center gap-2 shrink-0">
                     <Calendar size={14} /> Member Since
                   </span>
                   <span className="text-slate-200">August 2026</span>
@@ -220,10 +220,10 @@ export default function ProfileModal({ isOpen, onClose, onUpgrade }) {
           </div>
 
           {/* Footer */}
-          <div className="flex items-center justify-end gap-2 border-t border-white/10 bg-[#191919] px-6 py-3.5">
+          <div className="flex items-center justify-end gap-2 border-t border-white/10 bg-[#191919] px-4 sm:px-6 py-3 sm:py-3.5 shrink-0 pb-[max(0.75rem,env(safe-area-inset-bottom))] sm:pb-3.5">
             <button
               onClick={onClose}
-              className="px-4 py-2 text-xs font-medium rounded-xl bg-white/10 hover:bg-white/20 text-white transition-colors cursor-pointer"
+              className="w-full sm:w-auto px-4 py-2.5 sm:py-2 text-xs font-medium rounded-xl bg-white/10 hover:bg-white/20 text-white transition-colors cursor-pointer"
             >
               Done
             </button>

@@ -173,18 +173,19 @@ export default function Artifact(props) {
               <div className="flex items-center gap-1.5">
                 {/* Code / Live Preview Mode Switcher */}
                 {hasPreviewableFiles && (
-                  <div className="flex items-center p-0.5 rounded-xl bg-black/40 border border-white/10 mr-2">
+                  <div className="flex items-center p-0.5 rounded-xl bg-black/40 border border-white/10 mr-1 sm:mr-2">
                     <motion.button
                       whileHover={{ scale: 1.02 }}
                       whileTap={{ scale: 0.97 }}
                       onClick={() => setViewMode("code")}
-                      className={`flex items-center gap-1.5 px-3 py-1 text-xs font-medium rounded-lg transition-all cursor-pointer ${viewMode === "code"
+                      className={`flex items-center gap-1.5 px-2 sm:px-3 py-1.5 sm:py-1 text-xs font-medium rounded-lg transition-all cursor-pointer ${viewMode === "code"
                           ? "bg-emerald-500 text-black shadow-md font-semibold"
                           : "text-slate-400 hover:text-white"
                         }`}
+                      title="Code"
                     >
                       <Code2 size={13} />
-                      <span>Code</span>
+                      <span className="hidden sm:inline">Code</span>
                     </motion.button>
 
                     <motion.button
@@ -194,13 +195,14 @@ export default function Artifact(props) {
                         setViewMode("preview");
                         setPreviewKey(Date.now());
                       }}
-                      className={`flex items-center gap-1.5 px-3 py-1 text-xs font-medium rounded-lg transition-all cursor-pointer ${viewMode === "preview"
+                      className={`flex items-center gap-1.5 px-2 sm:px-3 py-1.5 sm:py-1 text-xs font-medium rounded-lg transition-all cursor-pointer ${viewMode === "preview"
                           ? "bg-emerald-500 text-black shadow-md font-semibold"
                           : "text-slate-400 hover:text-white"
                         }`}
+                      title="Live Preview"
                     >
                       <Play size={13} />
-                      <span>Live Preview</span>
+                      <span className="hidden sm:inline">Live Preview</span>
                     </motion.button>
                   </div>
                 )}
@@ -210,7 +212,7 @@ export default function Artifact(props) {
                   whileHover={{ scale: 1.05 }}
                   whileTap={{ scale: 0.95 }}
                   onClick={() => setIsExpanded(!isExpanded)}
-                  className="flex h-8 w-8 items-center justify-center rounded-lg text-slate-400 hover:bg-white/10 hover:text-white transition-colors cursor-pointer"
+                  className="hidden sm:flex h-8 w-8 items-center justify-center rounded-lg text-slate-400 hover:bg-white/10 hover:text-white transition-colors cursor-pointer"
                   title={isExpanded ? "Collapse width" : "Expand width"}
                 >
                   {isExpanded ? <Minimize2 size={16} /> : <Maximize2 size={16} />}
@@ -237,7 +239,7 @@ export default function Artifact(props) {
                   <div className="flex items-center justify-between border-b border-white/10 bg-[#16171d] px-2 pt-1.5 select-none overflow-hidden shrink-0">
                     {/* Horizontal File Tabs */}
                     <div
-                      className="flex items-center gap-1 overflow-x-auto overflow-y-hidden no-scrollbar py-0.5"
+                      className="flex min-w-0 items-center gap-1 overflow-x-auto overflow-y-hidden no-scrollbar py-0.5"
                       style={{ scrollbarWidth: "none", msOverflowStyle: "none" }}
                     >
                       {files.map((file) => {
@@ -278,12 +280,12 @@ export default function Artifact(props) {
                         {copied ? (
                           <>
                             <Check size={13} className="text-emerald-400" />
-                            <span className="text-emerald-400 font-medium">Copied!</span>
+                            <span className="hidden sm:inline text-emerald-400 font-medium">Copied!</span>
                           </>
                         ) : (
                           <>
                             <Copy size={13} />
-                            <span>Copy</span>
+                            <span className="hidden sm:inline">Copy</span>
                           </>
                         )}
                       </motion.button>
@@ -297,7 +299,7 @@ export default function Artifact(props) {
                         title="Download current file"
                       >
                         <Download size={13} />
-                        <span>File</span>
+                        <span className="hidden sm:inline">File</span>
                       </motion.button>
 
                       {/* Download Zip Archive */}
@@ -310,7 +312,7 @@ export default function Artifact(props) {
                           title="Download full project as ZIP"
                         >
                           <Archive size={13} />
-                          <span>Zip</span>
+                          <span className="hidden sm:inline">Zip</span>
                         </motion.button>
                       )}
                     </div>
