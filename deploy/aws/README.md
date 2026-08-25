@@ -29,7 +29,7 @@ aws sso login
 ## Create ECR repositories
 
 ```powershell
-cd "C:\Users\AASIF\OneDrive\Desktop\my ai"
+cd "C:\Users\AASIF\OneDrive\Desktop\zuno-ai"
 .\deploy\aws\create-ecr-repos.ps1 -Region ap-south-1
 ```
 

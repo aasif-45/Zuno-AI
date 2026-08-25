@@ -2,7 +2,7 @@ import axios from "axios";
 import { graph } from "../graph/graph.js";
 import { getMemory, addMessage } from "../config/memory.js";
 import { saveMessageToDb, updateTitleInDb } from "../utils/saveMessage.js";
-import { generateTitle } from "../config/llmModel.js";
+import { generateTitle, enforceBrandIdentity } from "../config/llmModel.js";
 import { uploadToS3 } from "../utils/uloadToS3.js";
 import { checkAgentLimit } from "../config/agentLimit.js";
 
@@ -127,7 +127,12 @@ export const agentController = async (req, res) => {
       file
     });
 
-    const aiResponse = result?.aiResponse || "I encountered an issue processing your request. Please try again.";
+    // Final brand guard: some agents (e.g. imageAnalyzer) invoke their model
+    // directly and bypass the per-model sanitizer, so enforce it once here on
+    // the exact text that gets persisted and returned to the client.
+    const aiResponse = enforceBrandIdentity(
+      result?.aiResponse || "I encountered an issue processing your request. Please try again."
+    );
 
     // Step 2: Post-execution: Determine the EXACT sub-agent executed and deduct appropriate cost
     if (userId) {

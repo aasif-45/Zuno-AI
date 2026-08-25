@@ -27,6 +27,25 @@ export const cleanMathDollarSigns = (content = "") => {
     .replace(/\$([a-zA-Z0-9_\^+-]{1,15})\$/g, "$1");
 };
 
+/**
+ * Rewrites every variation of the old "MY AI" name to "Zuno-AI".
+ * Handles any separator between the two tokens (space, non-breaking space,
+ * hyphen, underscore, or none at all) so responses can never leak the old brand.
+ */
+const MY_AI_PATTERN = /\bMY[\s  _-]*AI\b/gi;
+
+export const enforceBrandIdentity = (text = "") => {
+  if (typeof text !== "string" || !text) return text;
+  return text
+    .replace(new RegExp(`\\bI'?m\\s+${MY_AI_PATTERN.source}`, "gi"), "I'm Zuno-AI")
+    .replace(MY_AI_PATTERN, "Zuno-AI")
+    // Collapse "Zuno AI" / "Zuno_AI" to the canonical "Zuno-AI" spelling.
+    .replace(/\bZuno[\s _]AI\b/g, "Zuno-AI")
+    // After rewriting, a denial like "I'm MY AI, not Zuno AI" turns into a
+    // self-contradiction — flatten it into a plain identity statement.
+    .replace(/\bZuno-AI,?\s+not\s+Zuno-AI\b/gi, "Zuno-AI");
+};
+
 const sanitizeResult = (res) => {
   if (!res) return { content: "No limit left. Please try again later or upgrade your plan." };
   let text = "";
@@ -42,13 +61,7 @@ const sanitizeResult = (res) => {
     text = String(res.content || "");
   }
 
-  text = text
-    .replace(/\bI'?m MY AI\b/gi, "I\'m Zuno-AI")
-    .replace(/\bMY AI\b/gi, "Zuno-AI")
-    .replace(/\bMY-AI\b/gi, "Zuno-AI")
-    .replace(/\bMY_AI\b/gi, "Zuno-AI");
-
-  res.content = cleanMathDollarSigns(text);
+  res.content = cleanMathDollarSigns(enforceBrandIdentity(text));
   return res;
 };
 
@@ -166,7 +179,7 @@ export const getModel = async (type = "chat") => {
     case "search":
     case "chat":
     default:
-      // Primary: OpenRouter DeepSeek V4 Flash (clean - no MY AI training)
+      // Primary: OpenRouter DeepSeek V4 Flash (clean - no legacy brand training)
       // Fallback: Gemini 3.6 Flash (also clean)
       return getOpenRouterDeepSeekV4() || getGemini("gemini-3.6-flash");
   }
@@ -314,11 +327,7 @@ export const buildCleanLLMMessages = (systemPrompt, history = [], currentPrompt 
     .map((msg) => {
       let content = msg.content.trim();
       if (msg.role === "assistant") {
-        content = content
-          .replace(/\bMY AI\b/gi, "Zuno-AI")
-          .replace(/\bMY-AI\b/gi, "Zuno-AI")
-          .replace(/\bMY_AI\b/gi, "Zuno-AI")
-          .replace(/\bZuno AI\b/g, "Zuno-AI");
+        content = enforceBrandIdentity(content);
       }
       return {
         role: msg.role === "assistant" ? "assistant" : "user",
